@@ -1,0 +1,10 @@
+{
+  "id": "inc-001",
+  "headline": "product-catalog is intermittently rejecting GetProduct calls (its own span cites a 'Product Catalog Fail Feature Flag'), cascading HTTP 500s into cart, recommendations, product pages, and checkout via frontend. Sustained heavy failure 07:56-08:20 UTC, now tapering in ~5-10 min bursts, most recent burst 08:50 UTC, quiet since.",
+  "severity": "sev2",
+  "status": "open",
+  "blast_radius": "During active bursts: ~47% of checkout attempts fail (144 failed / 162 ok observed), ~38-47% of product detail page loads fail across all 10 catalog product IDs, and recommendations calls fail at a comparable rate. Cart, product browsing, and purchasing are all degraded because every one of those routes calls product-catalog's GetProduct to hydrate data. Unrelated routes not depending on product-catalog (e.g. /api/data?contextKeys=accessories, ~1.8% failure) are unaffected, so the blast radius is bounded to this one dependency's callers, not system-wide.",
+  "alert_ids": ["alt-001"],
+  "reasoning": "Single alert, single root cause, so DECLARE rather than ATTACH/MERGE (nothing else is open) or SPLIT (there's only one causal thread here, not two). Chose sev2 over sev1 because the failure is intermittent and self-recovering between bursts rather than a total, unrecovering outage, but it directly hits the revenue-critical checkout path at a high rate during bursts, which rules out sev3/sev4. Status is 'open' rather than 'monitoring' or 'resolved': the most recent burst (08:50 UTC) is only ~7 minutes old at time of writing, and every prior quiet gap of similar length (e.g. 08:23-08:29, 08:41-08:47) was followed by another burst, so a ~7-minute quiet window is not yet evidence of recovery -- it matches the established intermittent pattern, not a break from it.",
+  "revisions": []
+}

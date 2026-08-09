@@ -1,0 +1,12 @@
+{
+  "name": "sreoncall-agent",
+  "version": "0.1.0",
+  "description": "AI-native detect-and-triage SRE shift, covered by software.",
+  "type": "commonjs",
+  "main": "run.js",
+  "scripts": {
+    "start": "node run.js",
+    "smoke": "node src/lgtm.js"
+  },
+  "engines": { "node": ">=18" }
+}

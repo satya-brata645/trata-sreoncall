@@ -1,0 +1,106 @@
+{
+  "label": "pass1-declare",
+  "observed_at": "2026-08-09T08:27:31.620Z",
+  "alerts": [
+    {
+      "title": "Kafka Consumer Lag Impacting Fraud-Detection Service",
+      "service": "fraud-detection",
+      "severity": "medium",
+      "hypothesis": "Kafka queue problems causing increased consumer lag is affecting order processing within the fraud-detection service.",
+      "confidence": 0.9,
+      "skills_applied": [
+        "check-dependencies-before-blaming-the-symptom"
+      ],
+      "disconfirming_checks": [],
+      "evidence_count": 2
+    }
+  ],
+  "tool_call_count": 11,
+  "tool_calls": [
+    {
+      "name": "list_services",
+      "input": {}
+    },
+    {
+      "name": "load_skill",
+      "input": {
+        "name": "check-dependencies-before-blaming-the-symptom"
+      }
+    },
+    {
+      "name": "query_logs",
+      "input": {
+        "logql": "{service_name=\"ad\"} |= \"error\"",
+        "since_minutes": 10
+      }
+    },
+    {
+      "name": "search_traces",
+      "input": {
+        "tag_filter": "service.name=ad error=true",
+        "limit": 5
+      }
+    },
+    {
+      "name": "query_logs",
+      "input": {
+        "logql": "{service_name=\"cart\"} |= \"error\"",
+        "since_minutes": 10
+      }
+    },
+    {
+      "name": "search_traces",
+      "input": {
+        "tag_filter": "service.name=cart error=true",
+        "limit": 5
+      }
+    },
+    {
+      "name": "query_logs",
+      "input": {
+        "logql": "{service_name=\"payment\"} |= \"error\"",
+        "since_minutes": 10
+      }
+    },
+    {
+      "name": "search_traces",
+      "input": {
+        "tag_filter": "service.name=payment error=true",
+        "limit": 5
+      }
+    },
+    {
+      "name": "query_logs",
+      "input": {
+        "logql": "{service_name=\"kafka\"} |= \"error\"",
+        "since_minutes": 10
+      }
+    },
+    {
+      "name": "search_traces",
+      "input": {
+        "tag_filter": "service.name=kafka error=true",
+        "limit": 5
+      }
+    },
+    {
+      "name": "raise_alert",
+      "input": {
+        "title": "Kafka Consumer Lag Impacting Fraud-Detection Service",
+        "service": "fraud-detection",
+        "severity": "medium",
+        "severity_reasoning": "The consumer lag in the Kafka queue for `fraud-detection` service suggests delays in processing orders, which might impact fraud detection timing and accuracy, but is not a direct failure of a user-facing service.",
+        "hypothesis": "Kafka queue problems causing increased consumer lag is affecting order processing within the fraud-detection service.",
+        "confidence": 0.9,
+        "skills_applied": [
+          "check-dependencies-before-blaming-the-symptom"
+        ],
+        "evidence_refs": [
+          "ev_2cc417199a8c",
+          "ev_90eb38e9a87e"
+        ]
+      }
+    }
+  ],
+  "summary": "### Summary\nAn alert has been successfully raised for the Kafka queue problems affecting the `fraud-detection` service. Increased consumer lag was detected, likely causing delays in order processing which could affect the timing and accuracy of fraud detection. This issue is medium severity, given the indirect impact on users. Other services, despite having active failure-inducing feature flags, showed no direct problem evidence within their logs and traces based on the current data."
+}
