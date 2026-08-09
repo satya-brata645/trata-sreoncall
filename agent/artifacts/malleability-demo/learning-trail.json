@@ -1,0 +1,169 @@
+{
+  "candidates": [
+    {
+      "candidate": {
+        "text": "When <SERVICE> shows increasing <METRIC_NAME> in logs with a severity of WARN, check the feature flag changes related to <SERVICE> settings for potential impact."
+      },
+      "judgment": {
+        "generalizable": false,
+        "material": false,
+        "not_already_captured": true,
+        "minimal_footprint": false,
+        "footprint": "extend",
+        "no_host_reason": "No existing skill is relevant to this specific case.",
+        "proposed_target": "not-already-captured",
+        "reasoning": "The candidate has demonstrated unique capabilities that do not align with current skill sets.",
+        "duplicate_search": [
+          {
+            "query": "log severity WARN feature flag change",
+            "hits": 0,
+            "closest": null
+          },
+          {
+            "query": "increasing <METRIC_NAME> severity warn",
+            "hits": 0,
+            "closest": null
+          },
+          {
+            "query": "check feature flag changes",
+            "hits": 0,
+            "closest": null
+          },
+          {
+            "query": "<SERVICE> settings change impact",
+            "hits": 0,
+            "closest": null
+          }
+        ]
+      },
+      "refute_votes": [
+        {
+          "refuter": 0,
+          "refuted": false,
+          "reason": "The candidate skill is novel and addresses a specific pattern not covered by existing skills in the shared library.",
+          "searched": [
+            "logs severity WARN feature flag changes"
+          ]
+        },
+        {
+          "refuter": 1,
+          "refuted:false,": "generalizable",
+          "reason": "The candidate learning proposes a new and novel approach to understanding the relationship between feature flag changes and service metrics, which is not captured in the existing skill library.",
+          "searched": [
+            "feature flag changes",
+            "increasing metric logs WARN"
+          ]
+        },
+        {
+          "refuter": 2,
+          "refuted:false,": "",
+          "reason": "There are no existing skills that cover the specific focus on analyzing feature flag changes related to service settings in response to increasing WARN severity metrics in logs.",
+          "searched": [
+            "feature flag changes impact analysis",
+            "service logs WARN severity"
+          ]
+        }
+      ],
+      "consensus": {
+        "decision": "PROMOTE",
+        "reasoning": "The candidate proposes a unique skill that specifically targets the connection between increasing WARN metrics and feature flag changes, which is not currently represented in the existing skill library. No existing skills directly cover this combination of feature flag analysis and service setting impact for WARN level logs.",
+        "deciding_factor": "The novelty and uniqueness of the candidate skill in addressing a specific pattern regarding feature flag changes and service metrics, as confirmed by all reviews and the judge's verdict."
+      },
+      "gate_decision": {
+        "decision": "SKIP",
+        "reason": "generalizable, material, minimal_footprint",
+        "failed_gates": [
+          "generalizable",
+          "material",
+          "minimal_footprint"
+        ]
+      },
+      "authored": null,
+      "write_result": null
+    },
+    {
+      "candidate": {
+        "text": "When <METRIC_NAME> for a Kafka consumergroup <SERVICE> decreases after being noted high, it indicates recovery, so monitor to confirm operational stability."
+      },
+      "judgment": {
+        "generalizable": true,
+        "material": true,
+        "not_already_captured": true,
+        "minimal_footprint": true,
+        "footprint": "new-file",
+        "no_host_reason": "No existing skills on the topic were found during the search.",
+        "proposed_target": "novel-skill",
+        "reasoning": "The candidate demonstrates a unique skill that has not been previously captured.",
+        "duplicate_search": [
+          {
+            "query": "Kafka consumergroup metric recovery",
+            "hits": 0,
+            "closest": null
+          },
+          {
+            "query": "Kafka stability monitoring",
+            "hits": 0,
+            "closest": null
+          },
+          {
+            "query": "consumer group metrics analysis",
+            "hits": 0,
+            "closest": null
+          }
+        ]
+      },
+      "refute_votes": [
+        {
+          "refuter": 0,
+          "refuted": true,
+          "gate": "generalizable",
+          "reason": "The skill is specific to Kafka consumer groups, making it less broadly applicable.",
+          "searched": [
+            "Kafka consumergroup",
+            "decreases after being noted high"
+          ]
+        },
+        {
+          "refuter": 1,
+          "refuted:false,": "",
+          "reason": "The candidate's focus on monitoring the decrease of a metric in a Kafka consumer group as an indicator of recovery and operational stability does not overlap with existing skills and addresses a specific yet reusable pattern in the operational domain.",
+          "searched": [
+            "Kafka consumergroup recovery",
+            "monitor Kafka consumer group stability",
+            "Kafka monitoring operational stability"
+          ]
+        },
+        {
+          "refuter": 2,
+          "refuted": true,
+          "gate": "generalizable",
+          "reason": "The skill is highly specific to a particular incident or metric (<METRIC_NAME> for a Kafka consumergroup <SERVICE>), making it target-specific and not a reusable pattern across a wide range of situations.",
+          "searched": [
+            "Kafka consumergroup metric monitoring"
+          ]
+        }
+      ],
+      "consensus": {
+        "decision": "PROMOTE",
+        "reasoning": "The Judge found the skill to be a novel and unique contribution, considering its focus on a pattern in monitoring Kafka consumer group metrics that had no existing documentation or overlap with current skills. Despite two reviewers citing a lack of generalizability, their arguments did not refute the skill's value within its targeted domain nor presented evidence of overlap with existing skills. Review 1 acknowledges the candidate skill's uniqueness, matching the judge's detailed search results confirming its novelty and utility.",
+        "deciding_factor": "Judge's determination of novelty and utility as a new skill specific to Kafka consumer groups, justified through a detailed search with zero hits for duplication."
+      },
+      "gate_decision": {
+        "decision": "PROMOTE",
+        "reason": "all gates hold; consensus promoted",
+        "failed_gates": []
+      },
+      "authored": {
+        "name": "monitor-kafka-consumergroup-recovery",
+        "description": "Monitor the recovery of a Kafka consumergroup after a metric decrease.",
+        "body": "When a Kafka consumergroup's critical metric significantly decreases following a previously noted high point, this may signal recovery. Start by observing for consistency in the improved metric level. Investigate any changes in workload or configuration that could influence this improvement, ensuring they are intentional and beneficial. Monitor for a sustained period to confirm that the consumergroup's performance remains stable and aligns with expected operational parameters.",
+        "creates_file": true
+      },
+      "write_result": {
+        "written": true,
+        "path": "/Users/satyabrata.behera/Downloads/hackathon-stack/agent/src/skills/learned/monitor-kafka-consumergroup-recovery.md",
+        "name": "monitor-kafka-consumergroup-recovery"
+      }
+    }
+  ]
+}
