@@ -61,6 +61,10 @@ const STATUS_FOR_KIND: Record<SreEvent["kind"], string> = {
   remediation: "Remediating",
   resolved: "Resolved",
   report: "Reviewing",
+  // A learning says something about the agent, not about where an incident has
+  // got to. Present so the map stays exhaustive; `deriveIncident` filters these
+  // out before status is chosen, so this label should not normally be reachable.
+  learning: "Learned",
 };
 
 const RANK: Record<EventSeverity, number> = {
@@ -84,6 +88,12 @@ export function deriveIncident(events: readonly SreEvent[]): DerivedIncident | n
   const grouped = new Map<string, SreEvent[]>();
   for (const event of events) {
     if (!event.incidentId) continue;
+    // A learning often cites the incident that taught it, but it reports on the
+    // agent rather than on the incident's progress. Letting it in here would
+    // make an incident's status read "Learned" — and, worse, would let a lesson
+    // written days later resurface a long-finished incident as the newest thing
+    // happening.
+    if (event.kind === "learning") continue;
     const bucket = grouped.get(event.incidentId) ?? [];
     bucket.push(event);
     grouped.set(event.incidentId, bucket);

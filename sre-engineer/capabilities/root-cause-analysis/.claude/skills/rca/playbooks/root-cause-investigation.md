@@ -1,3 +1,10 @@
+---
+name: root-cause-investigation
+description: Walking from symptom to origin, and why the absence of a code cause is a complete answer.
+origin: base
+times_applied: 0
+---
+
 # Base root-cause investigation heuristics (origin: base — hand-written, not learned)
 
 ## The symptom's location is not the cause's location

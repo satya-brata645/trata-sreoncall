@@ -15,6 +15,7 @@ import {
   signatureForEvent,
   STM_CAP,
   traceForEvent,
+  traceForLearning,
   type MemoryTrace,
 } from "./traces";
 import {
@@ -173,6 +174,10 @@ export async function runMemoryProtocols(events: readonly SreEvent[], touched: r
   try {
     const byId = new Map(working.map((trace) => [trace.id, trace]));
     for (const event of touched) {
+      // A learning bypasses short-term memory entirely — see traceForLearning.
+      // It is a lesson the SRE agent already committed to a file, not an
+      // observation still earning its place.
+      if (event.kind === "learning") continue;
       const incoming = traceForEvent(event);
       const current = byId.get(incoming.id);
       byId.set(incoming.id, current ? reinforceTrace(current, eventSalience(event), now) : reinforceTrace(incoming, eventSalience(event), now));
@@ -181,6 +186,36 @@ export async function runMemoryProtocols(events: readonly SreEvent[], touched: r
     protocols = protocolState(protocols, "bind-reinforce", now);
   } catch (error) {
     protocols = protocolState(protocols, "bind-reinforce", now, error);
+  }
+
+  // What the SRE agent learned becomes what this agent knows.
+  //
+  // This is the join that did not exist before: a lesson earned while triaging
+  // stayed inside the triage agent, so every other surface kept making the
+  // mistake it had already learned to avoid. Learnings land straight in
+  // long-term memory, deduped by artifact, so re-posting the same learning
+  // updates it rather than accumulating copies of it.
+  let longTerm = snapshot.longTerm;
+  try {
+    const learnings = touched
+      .filter((event) => event.kind === "learning")
+      .map(traceForLearning)
+      .filter((trace): trace is MemoryTrace => trace !== null);
+    if (learnings.length) {
+      const known = new Set(longTerm.map((trace) => trace.signature));
+      const fresh = learnings.filter((trace) => !known.has(trace.signature));
+      if (fresh.length) await appendLongTerm(fresh);
+      longTerm = [
+        ...longTerm.map((trace) => {
+          const update = learnings.find((l) => l.signature === trace.signature);
+          return update ? { ...trace, ...update, hits: trace.hits + 1 } : trace;
+        }),
+        ...fresh,
+      ];
+    }
+    protocols = protocolState(protocols, "learn", now);
+  } catch (error) {
+    protocols = protocolState(protocols, "learn", now, error);
   }
 
   let episodes = snapshot.episodes;
@@ -204,7 +239,7 @@ export async function runMemoryProtocols(events: readonly SreEvent[], touched: r
   const view = {
     working,
     episodes: rankTraces(episodes.map((trace) => decayTrace(trace, now))).slice(0, 200),
-    longTerm: rankTraces(snapshot.longTerm.map((trace) => decayTrace(trace, now))),
+    longTerm: rankTraces(longTerm.map((trace) => decayTrace(trace, now))),
     protocols,
   };
   return { ...view, activityByNode: activityFor(view, events, now) };

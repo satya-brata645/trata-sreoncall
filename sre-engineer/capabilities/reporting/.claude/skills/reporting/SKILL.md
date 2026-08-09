@@ -113,13 +113,63 @@ survives, say so and write no playbook — the experience entry above already pr
 Candidates must be about *reporting technique* specifically — not detection, grouping, root cause, or fixing; those belong to other capabilities
 and you must never write there.
 
+### Tell the rest of the product what you learned
+
+A lesson that stays in this folder only ever helps this capability. The desktop agent — the
+one a person actually talks to — has no way to know you learned something unless you say so,
+which is why it used to keep making mistakes the SRE side had already learned to avoid.
+
+Whenever you write or revise a playbook, experience or baseline, or absorb a correction, POST
+a `learning` event:
+
+```bash
+curl -sS -m 5 -X POST "${TRATA_BASE_URL:-http://localhost:3000}/api/events" \
+  -H 'content-type: application/json' \
+  ${SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"} \
+  -d '{
+    "source": "sre-engineer/reporting",
+    "kind": "learning",
+    "severity": "info",
+    "headline": "<one line: what you now know that you did not before>",
+    "incidentId": "<the incident that taught it, if there was one>",
+    "learning": {
+      "capability": "reporting",
+      "artifact": "<repo-relative path to the file you just wrote>",
+      "artifactKind": "playbook|experience|baseline",
+      "origin": "self-authored|correction-absorbed|revised",
+      "lesson": "<what a future run would actually do differently>",
+      "correctionRef": "<required when origin is correction-absorbed>"
+    }
+  }' || true
+```
+
+**A failed POST must never sink the shift.** The artifact you wrote is already on disk and is
+the durable record; the event is how it reaches everything else. If the desktop isn't running
+or the call fails, note it plainly in your log line and carry on — losing a real lesson
+because a local server was down would help nobody. Same principle as remediation's PR
+fallback.
+
 ### Receipts — record what you actually used
 
-When you load and genuinely use a playbook or experience this shift, name it in your output and
-increment `times_applied` in that file's frontmatter. That counter is the difference between
-"there is a learning mechanism" and "here is something learned that has since been used." It is
-bookkeeping, never a gate: nothing may skip, retire or distrust a file because of its
-`times_applied` or `confidence` value.
+When you load and genuinely use a playbook, experience or baseline this shift, say so in your
+output *and* record it, so a reader can check the claim rather than take it:
+
+```bash
+node ../../scripts/record-application.js \
+  --capability reporting --run "$OUTPUT_DIR" --incident "<incident id, if any>" \
+  <artifact-name> [<artifact-name> ...]
+```
+
+Name artifacts by their frontmatter `name` or filename (`product-catalog`,
+`investigation-heuristics`). The script bumps `times_applied` in the artifact's own frontmatter
+and appends a provenance row naming the run and incident. It prints an error for a name it
+cannot find rather than failing silently — if you see one, you cited something that does not
+exist, which is worth knowing.
+
+The split is deliberate: deciding you used something is your judgment; recording it is
+bookkeeping. The counter is provenance only — nothing may skip, rank, retire or distrust an
+artifact because of its `times_applied` or `confidence` value.
+
 
 ## Related capabilities
 

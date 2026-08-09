@@ -98,13 +98,111 @@ function loadByName(name) {
   return null;
 }
 
+// ---------------------------------------------------------------- receipts --
+//
+// `times_applied` used to be decorative: author.js wrote the literal 0, this
+// file read it back, and six SKILL.md files instructed the model to increment
+// it — but nothing ever did, so it read 0 forever and there was no way to show
+// that a learned skill had ever actually been used. This is that writer.
+//
+// The split matters and is deliberate: the MODEL decides it used a skill (and
+// names it in the alert's `skills_applied`/`playbooks_applied` field, which is
+// a judgment); this code only records what was already decided. Incrementing a
+// counter concludes nothing about the target system.
+//
+// Nothing may ever gate on the resulting value — no "skip skills with
+// times_applied < N", no ranking by it. It is provenance a reader can check,
+// not an input to any decision. That would be exactly the smuggled threshold
+// this project bans everywhere else.
+
+// Deliberately NOT under src/data/, which is gitignored. This log is the whole
+// point of the counter — it is what makes "this learned skill has been used"
+// checkable by someone reading the repo rather than a claim they have to take
+// on trust. A provenance record nobody can see is not provenance.
+const APPLICATIONS_LOG = path.join(__dirname, "..", "..", "applications.jsonl");
+
+function bumpTimesApplied(filePath) {
+  const raw = fs.readFileSync(filePath, "utf8");
+  const match = raw.match(/^(---\n[\s\S]*?)times_applied:\s*(\d+)([\s\S]*?\n---\n)/);
+  if (!match) return null;
+  const next = Number(match[2]) + 1;
+  fs.writeFileSync(
+    filePath,
+    raw.replace(match[0], `${match[1]}times_applied: ${next}${match[3]}`)
+  );
+  return next;
+}
+
+// Appends a provenance row WITHOUT touching times_applied. For callers that
+// already incremented the counter themselves (professionalPractice's
+// recordSkillApplications, which requires a skill be both loaded this run and
+// cited — a stronger check than this file can make on its own) but whose
+// record of *that* still lands only in state.json, under the gitignored
+// src/data/. A counter nobody can inspect is not provenance; this is the fix.
+function appendProvenance({ skill, incidentId, alertId, run }) {
+  const found = loadByName(skill);
+  const row = {
+    at: new Date().toISOString(),
+    skill,
+    origin: found ? found.origin : null,
+    times_applied: found ? found.times_applied : null,
+    incident_id: incidentId || null,
+    alert_id: alertId || null,
+    run: run || null,
+  };
+  fs.mkdirSync(path.dirname(APPLICATIONS_LOG), { recursive: true });
+  fs.appendFileSync(APPLICATIONS_LOG, JSON.stringify(row) + "\n");
+  return row;
+}
+
+// Records that the named skills were actually used on this run. Returns one
+// row per skill so a caller can log or surface it. Unknown names are reported
+// rather than silently dropped — a model citing a skill that doesn't exist is
+// worth seeing, not hiding.
+//
+// Not used for skills already recorded via professionalPractice.
+// recordSkillApplications (see appendProvenance above) — this is for callers
+// that both decide AND increment in one step, e.g. sre-engineer's equivalent
+// script on the Claude-Code side.
+function recordApplication(names, context = {}) {
+  const rows = [];
+  for (const name of names || []) {
+    const skill = loadByName(name);
+    if (!skill) {
+      rows.push({ name, recorded: false, reason: "no such skill" });
+      continue;
+    }
+    const filePath = path.join(skill._dir, skill._filename);
+    const count = bumpTimesApplied(filePath);
+    const row = {
+      at: new Date().toISOString(),
+      skill: name,
+      origin: skill.origin,
+      times_applied: count,
+      incident_id: context.incidentId || null,
+      alert_id: context.alertId || null,
+      run: context.run || null,
+      recorded: count !== null,
+    };
+    rows.push(row);
+    if (count !== null) {
+      fs.mkdirSync(path.dirname(APPLICATIONS_LOG), { recursive: true });
+      fs.appendFileSync(APPLICATIONS_LOG, JSON.stringify(row) + "\n");
+    }
+  }
+  return rows;
+}
+
 module.exports = {
   listDescriptions,
   loadByName,
   parseFrontmatter,
   listAllSkillFiles,
   readSkillFile,
+  recordApplication,
+  appendProvenance,
   BASE_DIR,
   LEARNED_DIR,
+  APPLICATIONS_LOG,
   PROFESSIONAL_PRACTICES_DIR,
 };

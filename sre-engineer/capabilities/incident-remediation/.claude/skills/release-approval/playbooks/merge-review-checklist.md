@@ -1,3 +1,10 @@
+---
+name: merge-review-checklist
+description: What a genuinely safe merge looks like, and why a small diff is not automatically a safe one.
+origin: base
+times_applied: 0
+---
+
 # Base release-review heuristics (origin: base — hand-written, not learned)
 
 ## Re-derive, don't inherit

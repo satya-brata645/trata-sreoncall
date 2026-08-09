@@ -164,3 +164,39 @@ test("the summary is preferred over the headline, because it says more", () => {
   assert.equal(entry?.text, "The longer account.");
   assert.equal(entry?.speaker, "SRE-ENGINEER");
 });
+
+test("a learning does not hijack the incident it cites", () => {
+  // A learning usually names the incident that taught it. If it counted as
+  // incident activity, an incident's status would read "Learned" — and a lesson
+  // written days later would resurface a long-finished incident as the newest
+  // thing happening.
+  const base = {
+    source: "sre",
+    severity: "high" as const,
+    actionItems: [],
+    evidence: [],
+    incidentId: "inc-1",
+  };
+  const incident = deriveIncident([
+    { ...base, id: "e1", kind: "detection" as const, headline: "Checkout failing", at: "2026-08-09T10:00:00.000Z", receivedAt: "2026-08-09T10:00:00.000Z" },
+    { ...base, id: "e2", kind: "resolved" as const, headline: "Checkout recovered", at: "2026-08-09T11:00:00.000Z", receivedAt: "2026-08-09T11:00:00.000Z" },
+    {
+      ...base,
+      id: "e3",
+      kind: "learning" as const,
+      severity: "info" as const,
+      headline: "Learned: check traffic first",
+      at: "2026-08-12T09:00:00.000Z",
+      receivedAt: "2026-08-12T09:00:00.000Z",
+      learning: {
+        capability: "log-triage",
+        artifact: "baselines/checkout.md",
+        artifactKind: "baseline" as const,
+        origin: "self-authored" as const,
+        lesson: "Confirm traffic before reading a drop in errors.",
+      },
+    },
+  ]);
+  assert.ok(incident);
+  assert.equal(incident!.status, "Resolved");
+});

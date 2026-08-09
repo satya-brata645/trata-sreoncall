@@ -1,1 +1,1 @@
-sre-engineer/outputs/*_test/
+outputs/*_test/logs/*.session.jsonl

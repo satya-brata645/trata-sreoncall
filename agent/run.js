@@ -15,6 +15,7 @@ const triage = require("./src/agents/triage");
 const correlator = require("./src/agents/correlator");
 const humanResponse = require("./src/agents/human-response");
 const skillsAuthor = require("./src/skills/author");
+const skills = require("./src/skills/loader");
 const selfAccountability = require("./src/self-accountability");
 const professionalPractice = require("./src/professional-practice");
 const cli = require("./src/surface/cli");
@@ -68,6 +69,21 @@ async function runOneCycle() {
       const target = s.recent_windows[s.recent_windows.length - 1];
       if (target) target.had_alert = true;
     }
+
+    // recordSkillApplications (above) is the sole times_applied writer for this
+    // path — it requires a skill be BOTH loaded this run AND cited on an alert,
+    // which recordApplication alone cannot check, so calling it here too would
+    // double-increment the same citation. Its provenance still needs a tracked
+    // home (see the note on APPLICATIONS_LOG in loader.js), which is what
+    // appendProvenance does without touching the counter a second time.
+    for (const entry of applications) {
+      skills.appendProvenance({
+        skill: entry.skill_name,
+        alertId: entry.alert_id,
+        run: `cycle-${cycleCount}`,
+      });
+      console.log(`[skills] applied "${entry.skill_name}" — recorded in applications.jsonl`);
+    }
   }
 
   if (shouldRunCorrelator) {
@@ -75,13 +91,36 @@ async function runOneCycle() {
     console.log(`[correlator] ${correlatorResult.actionsTaken.length} action(s). ${correlatorResult.summary.split("\n")[0]}`);
     for (const action of correlatorResult.actionsTaken) {
       lifecycle.emit(action.type, action);
+      // A resolution additionally schedules professionalPractice's own,
+      // separate evidence-verified follow-up loop (runNextFollowUp, below) —
+      // several LATER independent reviews of whether recovery actually held,
+      // not a one-shot reflection. That is a stronger claim than "I noticed a
+      // pattern once" and deserves its own trigger point.
       if (action.type === "incident.resolved") {
         const incident = s.incidents[action.incident_id];
         professionalPractice.scheduleResolvedIncident({ state: s, incident });
-        const alerts = (incident.alert_ids || []).map((id) => s.alerts[id]).filter(Boolean);
-        const reflection = await skillsAuthor.reflect({ incident, alerts });
-        console.log(`[skills] ${reflection.actionsTaken.map((a) => a.type).join(", ") || "no action"} — ${reflection.summary.split("\n")[0]}`);
       }
+    }
+
+    // Reflect on anything substantive that happened this cycle — not only on a
+    // resolution. This used to fire ONLY inside `if (action.type ===
+    // "incident.resolved")`, which is why the loop almost never ran: incidents
+    // legitimately stay open across shifts while evidence accumulates, so a
+    // shift could investigate hard, learn something real, and record none of
+    // it. A resolution is not the only thing worth learning from; a
+    // declaration, a revision, or a raised alert all teach something.
+    const resolved = correlatorResult.actionsTaken.find((a) => a.type === "incident.resolved");
+    const substantive = resolved
+      || correlatorResult.actionsTaken.find((a) => a.type === "incident.declared" || a.type === "incident.revised")
+      || (newAlerts.length ? { incident_id: null } : null);
+
+    if (substantive) {
+      const incident = substantive.incident_id ? s.incidents[substantive.incident_id] : null;
+      const alerts = incident
+        ? (incident.alert_ids || []).map((id) => s.alerts[id]).filter(Boolean)
+        : newAlerts;
+      const reflection = await skillsAuthor.reflect({ incident, alerts });
+      console.log(`[skills] ${reflection.actionsTaken.map((a) => a.type).join(", ") || "no action"} — ${reflection.summary.split("\n")[0]}`);
     }
   }
 

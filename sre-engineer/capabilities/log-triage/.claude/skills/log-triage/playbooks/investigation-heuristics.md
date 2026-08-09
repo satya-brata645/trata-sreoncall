@@ -1,3 +1,10 @@
+---
+name: investigation-heuristics
+description: Triangulating signals, checking dependencies before blaming the symptom, and arguing severity from user impact.
+origin: base
+times_applied: 0
+---
+
 # Base investigation heuristics (origin: base — hand-written, not learned)
 
 These ship with the skill. `../self-skilling/learned/` is where genuinely new, self-authored
