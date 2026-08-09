@@ -1,0 +1,92 @@
+{
+  "_comment": "Synthetic on-call roster and escalation policy for the OTel Demo app. No real on-call data exists in this hackathon environment (the target app is a shared demo, not a real org with real staff), so this is fixture data the on-call-paging capability reads as its ground truth for 'who owns what' and 'who's up next'. Shapes are modeled on references/reference/sreoncall's real oncall-schedule.model.ts / escalation-policy.model.ts, simplified for this project. Edit freely — this is config, not code.",
+  "timezone": "Asia/Calcutta",
+  "teams": [
+    {
+      "team": "commerce",
+      "owns_services": ["cart", "checkout", "payment", "shipping", "currency", "quote"],
+      "reason": "Revenue path — anything a user pays with or checks out through.",
+      "schedule": {
+        "rotation_type": "weekly",
+        "layers": [
+          { "role": "primary", "user": "asha.iyer", "notify_channels": ["sms", "voice"] },
+          { "role": "secondary", "user": "devon.walker", "notify_channels": ["sms"] }
+        ]
+      },
+      "escalation_policy": {
+        "steps": [
+          { "delay_minutes": 0, "target": "primary", "timeout_minutes": 10 },
+          { "delay_minutes": 10, "target": "secondary", "timeout_minutes": 10 },
+          { "delay_minutes": 20, "target": "team-lead", "timeout_minutes": 15 }
+        ],
+        "team_lead": "priya.nair"
+      }
+    },
+    {
+      "team": "catalog",
+      "owns_services": ["product-catalog", "recommendation", "ad", "image-provider"],
+      "reason": "Product discovery and browsing — degrades the shopping experience but doesn't block a completed purchase on its own.",
+      "schedule": {
+        "rotation_type": "weekly",
+        "layers": [
+          { "role": "primary", "user": "marco.bianchi", "notify_channels": ["sms"] },
+          { "role": "secondary", "user": "hana.suzuki", "notify_channels": ["email", "sms"] }
+        ]
+      },
+      "escalation_policy": {
+        "steps": [
+          { "delay_minutes": 0, "target": "primary", "timeout_minutes": 15 },
+          { "delay_minutes": 15, "target": "secondary", "timeout_minutes": 15 },
+          { "delay_minutes": 30, "target": "team-lead", "timeout_minutes": 20 }
+        ],
+        "team_lead": "priya.nair"
+      }
+    },
+    {
+      "team": "web",
+      "owns_services": ["frontend", "frontend-proxy", "frontend-web"],
+      "reason": "The entry point for every user flow — a web outage can mask or amplify problems everywhere else.",
+      "schedule": {
+        "rotation_type": "weekly",
+        "layers": [
+          { "role": "primary", "user": "leila.haddad", "notify_channels": ["sms", "voice"] },
+          { "role": "secondary", "user": "tom.reyes", "notify_channels": ["sms"] }
+        ]
+      },
+      "escalation_policy": {
+        "steps": [
+          { "delay_minutes": 0, "target": "primary", "timeout_minutes": 10 },
+          { "delay_minutes": 10, "target": "secondary", "timeout_minutes": 10 },
+          { "delay_minutes": 20, "target": "team-lead", "timeout_minutes": 15 }
+        ],
+        "team_lead": "priya.nair"
+      }
+    },
+    {
+      "team": "platform",
+      "owns_services": ["email", "otelcol-contrib", "flagd", "flagd-ui", "telemetry-docs", "load-generator"],
+      "reason": "Infrastructure and internal tooling — rarely user-visible on its own.",
+      "schedule": {
+        "rotation_type": "weekly",
+        "layers": [
+          { "role": "primary", "user": "sam.okafor", "notify_channels": ["email"] },
+          { "role": "secondary", "user": "devon.walker", "notify_channels": ["email"] }
+        ]
+      },
+      "escalation_policy": {
+        "steps": [
+          { "delay_minutes": 0, "target": "primary", "timeout_minutes": 30 },
+          { "delay_minutes": 30, "target": "secondary", "timeout_minutes": 30 },
+          { "delay_minutes": 60, "target": "team-lead", "timeout_minutes": 30 }
+        ],
+        "team_lead": "priya.nair"
+      }
+    }
+  ],
+  "business_hours": {
+    "start": "09:30",
+    "end": "19:00",
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    "note": "Outside these hours, only sev1/sev2 with confirmed user impact should page a human immediately per the paging capability's own playbook — this file states availability, not urgency policy."
+  }
+}
