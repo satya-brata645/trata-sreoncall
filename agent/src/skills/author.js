@@ -313,6 +313,13 @@ function writeSkillFile({ name, description, body, origin, learnedFrom, evidence
 }
 
 function writeAndVerify({ authored, incident, evidenceRefs }) {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(authored.name || "")) {
+    return { written: false, reason: "skill name is not kebab-case" };
+  }
+  const contentCheck = gates.skillContentGate(authored.body);
+  if (!contentCheck.ok) {
+    return { written: false, reason: `skill content rejected: ${contentCheck.reason}` };
+  }
   const existing = loader.loadByName(authored.name);
   if (authored.creates_file && existing) {
     return { written: false, reason: `name collision: "${authored.name}" already exists (origin: ${existing.origin})` };

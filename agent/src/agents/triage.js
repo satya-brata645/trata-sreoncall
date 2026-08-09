@@ -112,6 +112,7 @@ function buildToolImpls({ window, onAlertRaised }) {
 async function runTriage({ window }) {
   const alerts = [];
   const toolCallLog = [];
+  const loadedSkillNames = new Set();
   const toolImpls = buildToolImpls({ window, onAlertRaised: (a) => alerts.push(a) });
 
   const skillDescriptions = skills.listDescriptions();
@@ -134,10 +135,16 @@ async function runTriage({ window }) {
     userMessage,
     tools: TOOLS,
     toolImpls,
-    onToolCall: (entry) => toolCallLog.push({ at: new Date().toISOString(), ...entry }),
+    onToolCall: (entry) => {
+      toolCallLog.push({ at: new Date().toISOString(), ...entry });
+      // A cited skill counts as applied only if this exact run actually
+      // loaded it. The professional-practice loop uses this ground-truth
+      // trail when assessing the later outcome of a learned skill.
+      if (entry.name === "load_skill" && entry.output && entry.output.name) loadedSkillNames.add(entry.output.name);
+    },
   });
 
-  return { alerts, summary: finalText, callLog, toolCallLog };
+  return { alerts, summary: finalText, callLog, toolCallLog, loadedSkillNames: [...loadedSkillNames] };
 }
 
 module.exports = { runTriage, SYSTEM_PROMPT, TOOLS };

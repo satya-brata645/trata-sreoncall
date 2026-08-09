@@ -27,14 +27,37 @@ function emptyState() {
       incidents_resolved: 0,
       retroactive_miss_notes: [], // { at, window_observed_at, agent_finding }
       detect_to_declare_log: [], // { alert_id, incident_id, alert_first_seen, incident_declared_at }
+      skill_application_log: [], // { at, skill_name, alert_id, incident_id?, outcome? }
+    },
+    // Deliberately a record of agent-authored professional-practice reviews,
+    // not a rule engine. Each resolved incident gets several later evidence
+    // checks so recovery, recurrence, and playbook usefulness are observed.
+    practice: {
+      follow_ups: [], // { incident_id, review_count, reviews_remaining, last_checked_sweep, reviews: [] }
+      playbooks: [], // { skill_name, source_incident_ids, created_at, revisions: [] }
     },
   };
+}
+
+function ensureShape(state) {
+  const blank = emptyState();
+  state.alerts = state.alerts || {};
+  state.incidents = state.incidents || {};
+  state.recent_windows = state.recent_windows || [];
+  state.performance = { ...blank.performance, ...(state.performance || {}) };
+  state.performance.retroactive_miss_notes = state.performance.retroactive_miss_notes || [];
+  state.performance.detect_to_declare_log = state.performance.detect_to_declare_log || [];
+  state.performance.skill_application_log = state.performance.skill_application_log || [];
+  state.practice = { ...blank.practice, ...(state.practice || {}) };
+  state.practice.follow_ups = state.practice.follow_ups || [];
+  state.practice.playbooks = state.practice.playbooks || [];
+  return state;
 }
 
 function load() {
   if (!fs.existsSync(STATE_FILE)) return emptyState();
   try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+    return ensureShape(JSON.parse(fs.readFileSync(STATE_FILE, "utf8")));
   } catch {
     return emptyState();
   }
@@ -75,4 +98,4 @@ function recordWindow(state, window) {
   }
 }
 
-module.exports = { load, save, emptyState, openAlerts, openIncidents, recordWindow, STATE_FILE };
+module.exports = { load, save, emptyState, ensureShape, openAlerts, openIncidents, recordWindow, STATE_FILE };
