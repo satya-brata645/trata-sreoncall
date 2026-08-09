@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test lib/os/__tests__/*.test.ts lib/agent/__tests__/*.test.ts lib/voice/__tests__/*.test.ts lib/store/__tests__/*.test.ts"
+    "test": "node --import tsx --test lib/os/__tests__/*.test.ts lib/agent/__tests__/*.test.ts lib/agent/memory/__tests__/*.test.ts lib/voice/__tests__/*.test.ts lib/store/__tests__/*.test.ts lib/builds/__tests__/*.test.ts lib/artifacts/__tests__/*.test.ts lib/schedule/__tests__/*.test.ts packages/disco-core/src/__tests__/*.test.ts",
+    "seed:artifacts": "tsx scripts/seed-artifacts.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

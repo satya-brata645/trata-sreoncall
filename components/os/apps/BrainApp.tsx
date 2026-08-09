@@ -22,6 +22,7 @@ import {
 import { Icon, StatusDot } from "@/components/ui/primitives";
 import { cn, formatCompactRelativeTime } from "@/lib/utils";
 import { useAgentActivity } from "@/lib/hooks/useAgentActivity";
+import { useBrainMemory } from "@/lib/hooks/useBrainMemory";
 import type { OsAppProps } from "@/lib/os/types";
 import { BrainConfig } from "./brain/BrainConfig";
 
@@ -1151,10 +1152,14 @@ const GRAPH_MODEL = buildGraphModel();
 function buildGraphModelWithDrafts(
   nodeDrafts: Record<string, MemoryNodeDraft>,
   customSkills: CustomSkillNode[],
+  activityByNode: Record<string, number> = {},
 ) {
   const nodes = GRAPH_MODEL.nodes.map((node) => ({
     ...node,
     label: nodeDrafts[node.id]?.label?.trim() || node.label,
+    // A blank real-memory snapshot is rendered dim, not as a convincing
+    // fixture. The Brain must not claim a trace was active when no trace exists.
+    activity: node.kind === "core" ? node.activity : Math.max(0, Math.min(1, activityByNode[node.id] ?? 0)),
   }));
   const edges = [...GRAPH_MODEL.edges];
   const baseNodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -1671,8 +1676,9 @@ function Memory() {
   const [nodeDrafts, setNodeDrafts] = useState<Record<string, MemoryNodeDraft>>({});
   const [vaultNotes, setVaultNotes] = useState<VaultNote[]>(INITIAL_VAULT_NOTES);
   const [customSkills, setCustomSkills] = useState<CustomSkillNode[]>(INITIAL_CUSTOM_SKILLS);
+  const liveMemory = useBrainMemory();
   const activeRoute = routeStack.at(-1) ?? { kind: "graph" };
-  const graphModel = buildGraphModelWithDrafts(nodeDrafts, customSkills);
+  const graphModel = buildGraphModelWithDrafts(nodeDrafts, customSkills, liveMemory.activityByNode);
 
   function pushRoute(next: MemoryRoute) {
     setRouteStack((current) => [...current, next]);

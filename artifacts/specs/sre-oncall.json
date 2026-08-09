@@ -1,0 +1,636 @@
+{
+  "$schema": "disco/v1",
+  "id": "sre_oncall",
+  "title": "SRE on-call",
+  "subtitle": "Signal to postmortem, end to end",
+  "intent": "What is on fire, where is work being lost, and how are we trending?",
+  "dataset": {
+    "source": "artifacts/runs/latest/dashboard.json",
+    "mode": "client",
+    "rowCount": 1048
+  },
+  "controls": [
+    {
+      "kind": "timeRange",
+      "id": "range",
+      "label": "Window",
+      "table": "alert_series",
+      "field": "t",
+      "presets": [
+        "last_24h",
+        "last_7d",
+        "last_14d",
+        "last_30d",
+        "all"
+      ],
+      "default": "last_14d",
+      "anchor": "data_max"
+    },
+    {
+      "kind": "dimension",
+      "id": "svc",
+      "label": "Service",
+      "table": "incidents",
+      "field": "service",
+      "mode": "single",
+      "values": [],
+      "default": []
+    },
+    {
+      "kind": "dimension",
+      "id": "sev",
+      "label": "Severity",
+      "table": "incidents",
+      "field": "severity",
+      "mode": "single",
+      "values": [],
+      "default": []
+    }
+  ],
+  "derivations": [
+    {
+      "op": "filter",
+      "id": "m_mttr",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "mttr"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "sp_mttr",
+      "from": "metric_spark",
+      "where": [
+        {
+          "field": "metric_id",
+          "op": "eq",
+          "value": "mttr"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "m_mtta",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "mtta"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "sp_mtta",
+      "from": "metric_spark",
+      "where": [
+        {
+          "field": "metric_id",
+          "op": "eq",
+          "value": "mtta"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "m_mttd",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "mttd"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "sp_mttd",
+      "from": "metric_spark",
+      "where": [
+        {
+          "field": "metric_id",
+          "op": "eq",
+          "value": "mttd"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "m_availability",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "availability"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "m_burn",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "burn"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "m_open",
+      "from": "metrics",
+      "where": [
+        {
+          "field": "id",
+          "op": "eq",
+          "value": "open"
+        }
+      ]
+    },
+    {
+      "op": "filter",
+      "id": "open_incidents",
+      "from": "incidents",
+      "where": [
+        {
+          "field": "state",
+          "op": "neq",
+          "value": "resolved"
+        }
+      ]
+    },
+    {
+      "op": "sort",
+      "id": "open_sorted",
+      "from": "open_incidents",
+      "by": "started_at",
+      "dir": "desc"
+    },
+    {
+      "op": "timeBucket",
+      "id": "alerts_6h",
+      "from": "alert_series",
+      "field": "t",
+      "unit": "hour",
+      "agg": {
+        "alerts": "sum",
+        "noise": "sum",
+        "incidents": "sum"
+      },
+      "fillGaps": true
+    },
+    {
+      "op": "derive",
+      "id": "alerts_split",
+      "from": "alerts_6h",
+      "as": "actionable",
+      "expr": {
+        "left": "alerts",
+        "op": "sub",
+        "right": "noise"
+      }
+    },
+    {
+      "op": "topK",
+      "id": "causes",
+      "from": "cause_mix",
+      "by": "cause",
+      "metric": "count",
+      "k": 5,
+      "other": true
+    },
+    {
+      "op": "derive",
+      "id": "budget_left",
+      "from": "services",
+      "as": "remaining",
+      "expr": {
+        "left": "budget_burn",
+        "op": "mul",
+        "right": -100
+      }
+    },
+    {
+      "op": "derive",
+      "id": "budget_pct",
+      "from": "budget_left",
+      "as": "pct_left",
+      "expr": {
+        "left": "remaining",
+        "op": "add",
+        "right": 100
+      }
+    },
+    {
+      "op": "sort",
+      "id": "services_ranked",
+      "from": "services",
+      "by": "incidents",
+      "dir": "desc"
+    },
+    {
+      "op": "derive",
+      "id": "sources_split",
+      "from": "sources",
+      "as": "actionable",
+      "expr": {
+        "left": "alerts",
+        "op": "sub",
+        "right": "noise"
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "funnel",
+      "id": "pipeline_flow",
+      "span": 12,
+      "title": "Signal to postmortem",
+      "subtitle": "Where the work goes, and where it leaks — every stage against the one before it",
+      "from": "pipeline",
+      "stage": "stage",
+      "value": "count",
+      "attrition": "attrition",
+      "reasonField": "attrition_reason",
+      "duration": "median_min",
+      "detail": "detail",
+      "scale": "log",
+      "format": "compact",
+      "reason": "a funnel is the only form that shows attrition as loudly as throughput"
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_mttr",
+      "span": 2,
+      "title": "MTTR",
+      "from": "m_mttr",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "spark": {
+        "from": "sp_mttr",
+        "x": "t",
+        "y": "v"
+      },
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_mtta",
+      "span": 2,
+      "title": "MTTA",
+      "from": "m_mtta",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "spark": {
+        "from": "sp_mtta",
+        "x": "t",
+        "y": "v"
+      },
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_mttd",
+      "span": 2,
+      "title": "MTTD",
+      "from": "m_mttd",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "spark": {
+        "from": "sp_mttd",
+        "x": "t",
+        "y": "v"
+      },
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_availability",
+      "span": 2,
+      "title": "Availability",
+      "from": "m_availability",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_burn",
+      "span": 2,
+      "title": "Worst budget burn",
+      "from": "m_burn",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "kpi",
+      "id": "kpi_open",
+      "span": 2,
+      "title": "Open incidents",
+      "from": "m_open",
+      "field": "value",
+      "agg": "first",
+      "labelField": "label",
+      "unitField": "unit",
+      "deltaField": "delta",
+      "inverseField": "inverse",
+      "breachField": "breach",
+      "basisField": "basis",
+      "meaningField": "meaning",
+      "compare": {
+        "mode": "none",
+        "inverse": false
+      }
+    },
+    {
+      "kind": "callout",
+      "id": "needs_attention",
+      "span": 7,
+      "title": "Needs your attention",
+      "from": "attention",
+      "titleField": "title",
+      "detailField": "detail",
+      "severityField": "severity",
+      "metaField": "meta",
+      "rankField": "urgency",
+      "limit": 8,
+      "emptyText": "Nothing needs attention — no open criticals, no budget breaches, no overdue root causes.",
+      "reason": "a ranked list, because at 3am the only question is what to look at first"
+    },
+    {
+      "kind": "table",
+      "id": "open_queue",
+      "span": 5,
+      "title": "Open queue",
+      "from": "open_sorted",
+      "columns": [
+        {
+          "field": "severity",
+          "label": "Sev",
+          "align": "left"
+        },
+        {
+          "field": "title",
+          "label": "Incident",
+          "align": "left"
+        },
+        {
+          "field": "service",
+          "label": "Service",
+          "align": "left"
+        },
+        {
+          "field": "responder",
+          "label": "Owner",
+          "align": "left"
+        }
+      ],
+      "pageSize": 8,
+      "virtualize": false
+    },
+    {
+      "kind": "timeseries",
+      "id": "alert_volume",
+      "span": 12,
+      "title": "Alert volume and incidents",
+      "subtitle": "The band below the line is noise — alerts that closed with no action",
+      "from": "alerts_split",
+      "x": "bucket",
+      "y": [
+        {
+          "field": "noise",
+          "mark": "area",
+          "stack": true
+        },
+        {
+          "field": "actionable",
+          "mark": "area",
+          "stack": true
+        },
+        {
+          "field": "incidents",
+          "mark": "line",
+          "stack": false
+        }
+      ],
+      "mark": "area",
+      "stack": true,
+      "format": "compact",
+      "connectNulls": false,
+      "yScale": "linear"
+    },
+    {
+      "kind": "pie",
+      "id": "root_cause",
+      "span": 4,
+      "title": "Root cause",
+      "from": "causes",
+      "category": "cause",
+      "value": "count",
+      "donut": true,
+      "format": "compact"
+    },
+    {
+      "kind": "radial",
+      "id": "error_budget",
+      "span": 4,
+      "title": "Error budget remaining",
+      "subtitle": "Budget left, not availability — 99.91% and 99.95% look identical on a dial",
+      "from": "budget_pct",
+      "category": "service",
+      "value": "pct_left",
+      "max": 100,
+      "warnAt": 25,
+      "critAt": 5,
+      "format": "percent"
+    },
+    {
+      "kind": "radar",
+      "id": "service_health",
+      "span": 4,
+      "title": "Service health",
+      "subtitle": "Six axes scored against fixed targets, higher is better",
+      "from": "service_axes",
+      "entity": "service",
+      "axes": [
+        "Availability",
+        "Latency",
+        "Errors",
+        "Headroom",
+        "Change safety",
+        "Budget left"
+      ],
+      "series": [
+        "checkout-api",
+        "auth-service",
+        "ledger-db"
+      ],
+      "max": 100
+    },
+    {
+      "kind": "bar",
+      "id": "mttr_by_sev",
+      "span": 6,
+      "title": "Time to restore by severity",
+      "subtitle": "Median against p90 — the typical page and the bad night",
+      "from": "severity_mix",
+      "x": "severity",
+      "y": [
+        "mttr",
+        "p90"
+      ],
+      "orientation": "horizontal",
+      "stack": false,
+      "format": "duration"
+    },
+    {
+      "kind": "bar",
+      "id": "by_service",
+      "span": 6,
+      "title": "Incidents by service",
+      "subtitle": "Amber and red mark services already spending error budget",
+      "from": "services_ranked",
+      "x": "service",
+      "y": [
+        "incidents"
+      ],
+      "orientation": "horizontal",
+      "stack": false,
+      "format": "number",
+      "colorBy": {
+        "field": "budget_burn",
+        "warnAt": 0.75,
+        "critAt": 1,
+        "inverse": false
+      }
+    },
+    {
+      "kind": "heatmap",
+      "id": "when",
+      "span": 6,
+      "title": "When incidents happen",
+      "subtitle": "UTC, three-hour bands — deploy windows show up as vertical stripes",
+      "from": "incident_heat",
+      "x": "hour",
+      "y": "day",
+      "value": "count",
+      "format": "number"
+    },
+    {
+      "kind": "bar",
+      "id": "by_source",
+      "span": 6,
+      "title": "Alerts by source",
+      "subtitle": "Stacked so the noisiest connector is obvious at a glance",
+      "from": "sources_split",
+      "x": "name",
+      "y": [
+        "actionable",
+        "noise"
+      ],
+      "orientation": "vertical",
+      "stack": true,
+      "format": "compact"
+    },
+    {
+      "kind": "table",
+      "id": "all_metrics",
+      "span": 12,
+      "title": "All metrics",
+      "from": "metrics",
+      "columns": [
+        {
+          "field": "label",
+          "label": "Metric",
+          "align": "left"
+        },
+        {
+          "field": "value",
+          "label": "Value",
+          "align": "right"
+        },
+        {
+          "field": "unit",
+          "label": "Unit",
+          "align": "left"
+        },
+        {
+          "field": "delta",
+          "label": "Δ vs prev",
+          "align": "right"
+        },
+        {
+          "field": "basis",
+          "label": "Basis",
+          "align": "left"
+        }
+      ],
+      "pageSize": 20,
+      "virtualize": false
+    }
+  ],
+  "notes": [
+    "Durations are medians with p90 alongside — incident times are long-tailed, and a mean MTTR sits above almost every incident that actually happened.",
+    "Metrics are computed upstream by the producer and read from the artifact; everything derived at view time goes through the same algebra as the unfiltered figures."
+  ]
+}

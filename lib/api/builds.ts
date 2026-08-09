@@ -7,7 +7,7 @@
  * logic, on this date`.
  */
 
-import { fetchBackend, type AuthParams } from "./client";
+import type { AuthParams } from "./client";
 
 export interface Build {
   number: number;
@@ -19,6 +19,13 @@ export interface Build {
   /** The wake-up whose dashboard was promoted. */
   session_id?: string | null;
   metadata?: Record<string, unknown>;
+  spec?: Record<string, unknown>;
+  scope?: {
+    queries?: unknown[];
+    detectors?: string[];
+    tables?: Array<{ name: string; fields: Record<string, string> }>;
+  };
+  refresh_rate?: { interval_seconds?: number; interval_hours?: number } | null;
 }
 
 export interface BuildsResponse {
@@ -34,8 +41,18 @@ export interface BuildsResponse {
   current_build: number | null;
 }
 
-export async function getBuilds(auth: AuthParams, appId: string): Promise<BuildsResponse> {
-  return fetchBackend<BuildsResponse>(`/builds/${encodeURIComponent(appId)}`, auth);
+async function local<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`/api/builds/${path.split("/").map(encodeURIComponent).join("/")}`, {
+    cache: "no-store",
+    headers: init?.body ? { "content-type": "application/json" } : undefined,
+    ...init,
+  });
+  if (!response.ok) throw new Error(`builds unavailable (${response.status}): ${await response.text()}`);
+  return response.json() as Promise<T>;
+}
+
+export async function getBuilds(_auth: AuthParams, appId: string): Promise<BuildsResponse> {
+  return local<BuildsResponse>(appId);
 }
 
 export interface PromoteBuildBody {
@@ -51,14 +68,13 @@ export interface PromoteBuildBody {
  * a confirm at the call site.
  */
 export async function promoteBuild(
-  auth: AuthParams,
+  _auth: AuthParams,
   appId: string,
   body: PromoteBuildBody = {},
 ): Promise<{ app_id: string; build: Build }> {
-  return fetchBackend(`/builds/${encodeURIComponent(appId)}/promote`, {
-    ...auth,
+  return local(`${appId}/promote`, {
     method: "POST",
-    body,
+    body: JSON.stringify(body),
   });
 }
 
@@ -70,13 +86,12 @@ export async function promoteBuild(
  * build is how people end up stranded on a worse version.
  */
 export async function setCurrentBuild(
-  auth: AuthParams,
+  _auth: AuthParams,
   appId: string,
   buildNumber: number,
 ): Promise<BuildsResponse> {
-  return fetchBackend(`/builds/${encodeURIComponent(appId)}/current`, {
-    ...auth,
+  return local(`${appId}/current`, {
     method: "POST",
-    body: { build: buildNumber },
+    body: JSON.stringify({ build: buildNumber }),
   });
 }
