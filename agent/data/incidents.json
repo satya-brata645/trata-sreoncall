@@ -1,0 +1,459 @@
+[
+  {
+    "id": "INC-0001",
+    "seq": 1,
+    "service": "product-catalog",
+    "affectedServices": [
+      "checkout",
+      "frontend",
+      "frontend-proxy",
+      "recommendation"
+    ],
+    "title": "Product Catalog Service Feature Flag Misconfiguration",
+    "severity": "SEV2",
+    "status": "investigating",
+    "fixType": "config",
+    "createdAt": "2026-08-09T08:15:06.566Z",
+    "updatedAt": "2026-08-09T08:19:28.648Z",
+    "resolvedAt": null,
+    "prUrl": "https://github.com/satya-brata645/trata-sreoncall/pull/3",
+    "timeline": [
+      {
+        "at": "2026-08-09T08:15:06.568Z",
+        "type": "opened",
+        "rootCause": "A feature flag in the product-catalog service was erroneously enabled, causing service failures and preventing products from being retrieved during checkout processes.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "trace",
+            "query": "get_trace_spans",
+            "result": "Trace ID: 3e5c11de7b7c17b708160b92aecff868; Error: 'Product Catalog Fail Feature Flag Enabled'"
+          },
+          {
+            "type": "log",
+            "query": "query_logs",
+            "result": "No error log lines returned from checkout service"
+          },
+          {
+            "type": "trace",
+            "query": "search_error_traces for checkout",
+            "result": "Error trace with ID: 3e5c11de7b7c17b708160b92aecff868 involving product-catalog"
+          }
+        ],
+        "recommendedActions": [
+          "Review and disable/correct the feature flag causing Product Catalog Fail.",
+          "Validate other feature flags to ensure no further erroneous configurations exist."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The elevated error rate in the 'checkout' service without a corresponding latency increase suggests a potential problem in the service itself or in its dependencies, leading to failed requests. The lack of a surge in system resource usage (CPU, memory) diminishes the likelihood of a resource exhaustion issue. Also, the latency is surprisingly lower than baseline, which indicates that this is not a typical latency regression or resource exhaustion case."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:15:14.961Z",
+        "type": "revised",
+        "revisionReason": "The frontend service error rate spike is due to a downstream failure in the product-catalog service, confirmed by trace evidence showing feature flag-related errors.",
+        "rootCause": "A feature flag in the product-catalog service was erroneously enabled, causing service failures and preventing products from being retrieved during frontend operations as well as checkout processes.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "trace",
+            "query": "get_trace_spans",
+            "result": "7f5cf2df9b02eb9164a308097389f0b"
+          },
+          {
+            "type": "trace",
+            "query": "get_trace_spans",
+            "result": "oteldemo.ProductCatalogService/GetProduct - Error: Product Catalog Fail Feature Flag Enabled"
+          }
+        ],
+        "recommendedActions": [
+          "Investigate and disable the erroneous feature flag in the product-catalog service.",
+          "Monitor the error rate of the affected services to ensure it returns to baseline after the fix."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The 'frontend' service was flagged for an elevated error rate, which is consistent with the 'error-spike' playbook, as this represents requests failing outright. Furthermore, there is no matching increase in latency, implying that requests are not slow, but failing, which can also suggest a potential dependency issue, thus 'dependency-failure' should also be considered."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:15:24.900Z",
+        "type": "revised",
+        "revisionReason": "The error in the frontend-proxy service traces back to the product-catalog service, where an erroneous feature flag is enabled, leading to failures in the product retrieval process.",
+        "rootCause": "The root cause remains the same: A feature flag in the product-catalog service was erroneously enabled, causing service failures and preventing products from being retrieved during frontend operations as well as checkout processes.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "traces_span_metrics_calls_total{service_name=\"frontend-proxy\",status_code=\"STATUS_CODE_ERROR\"}",
+            "result": "Elevated error rate observed with values climbing to 18.16 compared to baseline 11.51."
+          },
+          {
+            "type": "trace",
+            "query": "search_error_traces for frontend-proxy",
+            "result": "Trace ID 4430996956fa990f2c62e6c5e72a902d shows failure tracing back to product-catalog service."
+          },
+          {
+            "type": "trace",
+            "query": "get_trace_spans with traceId 4430996956fa990f2c62e6c5e72a902d",
+            "result": "Spans show error in product-catalog service due to 'Product Catalog Fail Feature Flag Enabled'."
+          }
+        ],
+        "recommendedActions": [
+          "Investigate the feature flag settings in the product-catalog service and disable the erroneous flag."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The elevated error rate in the 'frontend-proxy' service at 18.16 compared to its trailing baseline of 11.51 indicates outright failures, suggesting the error-spike playbook. Moreover, given that the CPU usage z-score is exceptionally high, it raises the possibility of a dependency or shared downstream issue, justifying the consideration of the dependency-failure playbook."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:17:00.278Z",
+        "type": "revised",
+        "revisionReason": "The 'frontend' service is experiencing error spikes and elevated CPU and memory usage, mainly due to failures in its interactions with the 'product-catalog' and 'recommendation' services. This correlates with a known feature flag issue in 'product-catalog'.",
+        "rootCause": "The 'frontend' service is experiencing elevated error rates due to a failing dependency on 'product-catalog', which has an erroneously enabled feature flag causing product retrieval failures and impacting recommendations.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "trace",
+            "query": "search_error_traces for frontend",
+            "result": "traceId: 2f807254f4c4e5bc535b94149e750fc5, errors at ProductCatalogService/GetProduct due to 'Product Catalog Fail Feature Flag Enabled'"
+          },
+          {
+            "type": "trace",
+            "query": "get_trace_spans for traceId: 2f807254f4c4e5bc535b94149e750fc5",
+            "result": "frontend-proxy and recommendation service spans show errors stemming from product-catalog dependency issues."
+          }
+        ],
+        "recommendedActions": [
+          "Investigate and fix the feature flag configuration in the 'product-catalog' service to prevent its erroneous activation."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "resource-exhaustion"
+            ],
+            "reasoning": "The 'frontend' service is experiencing an increased error rate as well as elevated CPU and memory metrics. This suggests that there might be an immediate issue with request processing (error spike), coupled with potential resource constraints or inefficiencies affecting performance (resource exhaustion)."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:17:26.543Z",
+        "type": "revised",
+        "revisionReason": "The frontend-proxy service is experiencing elevated error rates due to a dependency failure originating from the product-catalog service, which has a feature flag issue causing product retrieval failures.",
+        "rootCause": "The 'frontend-proxy' service, like other services, is experiencing elevated error rates due to a failing dependency on 'product-catalog'. An erroneously enabled feature flag in 'product-catalog' is causing product retrieval failures and impacting recommendations.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "sum(rate(traces_span_metrics_calls_total{service_name=\"frontend-proxy\",status_code=\"STATUS_CODE_ERROR\"}[5m])) / clamp_min(sum(rate(traces_span_metrics_calls_total{service_name=\"frontend-proxy\"}[5m])), 1)",
+            "result": "0.19291217257318954"
+          },
+          {
+            "type": "trace",
+            "query": "5 error traces found for frontend-proxy.",
+            "result": "18faeab6ca8c635db8a85824461f518f"
+          },
+          {
+            "type": "trace",
+            "query": "trace spans for trace ID 18faeab6ca8c635db8a85824461f518f",
+            "result": "Error spans in 'frontend-proxy', 'frontend', and 'product-catalog' with message 'Error: Product Catalog Fail Feature Flag Enabled'."
+          }
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The 'frontend-proxy' service is experiencing an elevated error rate, which fits the 'error-spike' category. Additionally, since there's already an open incident for a dependency failure related to 'product-catalog' impacting multiple services including 'frontend-proxy', the 'dependency-failure' category also applies."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:17:55.526Z",
+        "type": "revised",
+        "revisionReason": "The checkout service is affected by an error in the product-catalog service caused by a feature flag, which aligns with the existing incident INC-0001.",
+        "rootCause": "The 'checkout' service, alongside other services, is experiencing elevated error rates due to a failing dependency on 'product-catalog'. The 'product-catalog' service has a feature flag enabled that is causing product retrieval failures, corroborating the ongoing incident affecting multiple services.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "trace",
+            "query": "Trace ID: 6fff84829a1078c693dfc4f3b37588b7",
+            "result": "Error in product-catalog: Error: Product Catalog Fail Feature Flag Enabled; failed to get product #\"HQTGWGPNH4\" in checkout."
+          }
+        ],
+        "recommendedActions": [
+          "Investigate and disable the erroneous feature flag in the product-catalog service.",
+          "Monitor the effect of disabling the feature flag on the error rate of affected services."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The error rate for the checkout service has increased significantly, indicating potential failures in request processing. The latency and resource usage metrics do not show significant deviation from the baseline, suggesting the problem may not be primarily due to resource exhaustion or intrinsic latency issues, but possibly due to issues in handling requests or dependencies."
+          }
+        ]
+      },
+      {
+        "at": "2026-08-09T08:19:28.641Z",
+        "type": "revised",
+        "revisionReason": "New traces indicate the product-catalog service is failing due to an enabled feature flag causing product retrieval errors. This aligns with the ongoing incident affecting dependent services, such as checkout and frontend.",
+        "rootCause": "The product-catalog service has a failing feature flag enabled, causing product retrieval failures and affecting downstream services.",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "sum(rate(traces_span_metrics_calls_total{service_name=\"product-catalog\",status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+            "result": "2.808333333333333"
+          },
+          {
+            "type": "metric",
+            "query": "sum(rate(traces_span_metrics_calls_total{service_name=\"product-catalog\"}[5m]))",
+            "result": "4.1"
+          },
+          {
+            "type": "trace",
+            "query": "f7397f803d15f4d56d7f0f65930dc10",
+            "result": "Error: Product Catalog Fail Feature Flag Enabled"
+          }
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "dependency-failure"
+            ],
+            "reasoning": "The product-catalog service is experiencing significant error rate elevation, suggesting a potential failure in handling requests. The current error rate is notably above the baseline with high confidence (0.9). Given the existing open incident that implies a dependency failure, it's important to consider dependency issues affecting this service, as it might be failing due to downstream or upstream problems."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "INC-0002",
+    "seq": 2,
+    "service": "email",
+    "affectedServices": [],
+    "title": "Elevated CPU and Memory Usage in Email Service",
+    "severity": "SEV3",
+    "status": "investigating",
+    "fixType": "code",
+    "createdAt": "2026-08-09T08:15:56.885Z",
+    "updatedAt": "2026-08-09T08:15:56.885Z",
+    "resolvedAt": null,
+    "prUrl": null,
+    "timeline": [
+      {
+        "at": "2026-08-09T08:15:56.885Z",
+        "type": "opened",
+        "rootCause": "The email service is experiencing elevated CPU and memory usage, possibly due to unbounded growth in data structures or inefficient resource management.",
+        "confidence": 0.85,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "container_memory_percent_ratio{container_name=\"email\"}",
+            "result": "71.265625"
+          },
+          {
+            "type": "metric",
+            "query": "container_cpu_utilization_ratio{container_name=\"email\"}",
+            "result": "0.32813630968575597"
+          }
+        ],
+        "recommendedActions": [
+          "Investigate potential causes of memory leaks in the email service codebase.",
+          "Review any recent code changes or deployments that could affect memory or CPU usage.",
+          "Consider increasing container resource limits if after investigation, it turns out to be a workload change rather than a code issue."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "resource-exhaustion"
+            ],
+            "reasoning": "The primary symptom observed is elevated CPU and memory usage without a corresponding increase in error rate. This fits the profile of resource exhaustion, where a service's memory or CPU can be climbing, especially if the climb is monotonic rather than spiky."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "INC-0003",
+    "seq": 3,
+    "service": "ad",
+    "affectedServices": [],
+    "title": "Ad Service Elevated Resource Usage",
+    "severity": "SEV4",
+    "status": "investigating",
+    "fixType": "config",
+    "createdAt": "2026-08-09T08:16:23.720Z",
+    "updatedAt": "2026-08-09T08:16:23.720Z",
+    "resolvedAt": null,
+    "prUrl": null,
+    "timeline": [
+      {
+        "at": "2026-08-09T08:16:23.720Z",
+        "type": "opened",
+        "rootCause": "Current monitoring shows elevated CPU and memory usage but no immediate exhaustion or accompanying errors or latency increases.",
+        "confidence": 0.8,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "container_cpu_utilization_ratio{container_name=\"ad\"}",
+            "result": "0.43740144115505486"
+          },
+          {
+            "type": "metric",
+            "query": "container_memory_percent_ratio{container_name=\"ad\"}",
+            "result": "80.39973958333333"
+          },
+          {
+            "type": "metric",
+            "query": "rate(jvm_gc_duration_seconds_sum[5m])",
+            "result": "0"
+          }
+        ],
+        "recommendedActions": [
+          "Monitor resource usage for further increases.",
+          "Investigate potential workload changes or configuration optimizations to reduce resource usage.",
+          "Ensure service is not reaching resource limits that could lead to throttling."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "resource-exhaustion"
+            ],
+            "reasoning": "The signal digest shows an elevated CPU usage compared to its baseline, as well as elevated memory usage, which fits the pattern described by the resource-exhaustion playbook."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "INC-0004",
+    "seq": 4,
+    "service": "product-catalog",
+    "affectedServices": [
+      "frontend-web",
+      "frontend",
+      "frontend-proxy"
+    ],
+    "title": "Latency regression in product-catalog due to CPU saturation and feature flag misconfiguration",
+    "severity": "SEV2",
+    "status": "investigating",
+    "fixType": "config",
+    "createdAt": "2026-08-09T08:30:58.936Z",
+    "updatedAt": "2026-08-09T08:30:58.942Z",
+    "resolvedAt": null,
+    "prUrl": "https://github.com/satya-brata645/trata-sreoncall/pull/5",
+    "timeline": [
+      {
+        "at": "2026-08-09T08:30:58.942Z",
+        "type": "opened",
+        "rootCause": "Latency regression in product-catalog due to a CPU load under high usage and a feature flag enabling failures unnecessarily.",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "histogram_quantile(0.99, sum by (le, operation) (rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"product-catalog\"}[5m])))",
+            "result": "22.13"
+          },
+          {
+            "type": "metric",
+            "query": "container_cpu_utilization_ratio{container_name=\"product-catalog\"}",
+            "result": "0.7468"
+          },
+          {
+            "type": "trace",
+            "query": "Trace ID example",
+            "result": "b07726aad09b26736a66c3284718a3c"
+          }
+        ],
+        "recommendedActions": [
+          "Inspect and adjust the 'Product Catalog Fail Feature Flag' setting to disable unnecessary failure activation.",
+          "Optimize CPU workload to handle peak requests more efficiently."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "latency-regression",
+              "resource-exhaustion"
+            ],
+            "reasoning": "The current signal digest shows a significant increase in latency p99 while the error rate is unusually low. Additionally, CPU usage shows an elevated trend. These indicators suggest a latency regression possibly due to resource exhaustion (CPU usage specifically). "
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "INC-0005",
+    "seq": 5,
+    "service": "product-catalog",
+    "affectedServices": [],
+    "title": "Performance Degradation in Product-Catalog GetProduct Operation",
+    "severity": "SEV3",
+    "status": "investigating",
+    "fixType": "code",
+    "createdAt": "2026-08-09T08:32:01.309Z",
+    "updatedAt": "2026-08-09T08:32:01.309Z",
+    "resolvedAt": null,
+    "prUrl": "https://github.com/satya-brata645/trata-sreoncall/pull/6",
+    "timeline": [
+      {
+        "at": "2026-08-09T08:32:01.309Z",
+        "type": "opened",
+        "rootCause": "The 'GetProduct' operation in the 'product-catalog' service exhibits high latency with p99 significantly elevated, combined with high CPU usage. The precise internal cause (e.g., inefficient algorithm or contention) requires code optimization in this operation.",
+        "confidence": 0.8,
+        "evidence": [
+          {
+            "type": "metric",
+            "query": "histogram_quantile(0.99, sum by (le, span_name) (rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"product-catalog\"}[5m])))",
+            "result": "oteldemo.ProductCatalogService/GetProduct p99 latency = 34.424999999999926 ms"
+          },
+          {
+            "type": "metric",
+            "query": "container_cpu_utilization_ratio{container_name=\"product-catalog\"}",
+            "result": "container_cpu_utilization_ratio for product-catalog = 0.7469877028538868"
+          },
+          {
+            "type": "log",
+            "query": "Logs for service product-catalog past 30 minutes",
+            "result": "No error logs found"
+          }
+        ],
+        "recommendedActions": [
+          "Analyze and optimize the 'GetProduct' function in product-catalog service for performance bottlenecks.",
+          "Review database queries or interactions within 'GetProduct' for potential inefficiencies."
+        ],
+        "playbookSelections": [
+          {
+            "playbookIds": [
+              "error-spike",
+              "latency-regression",
+              "resource-exhaustion"
+            ],
+            "reasoning": "The 'product-catalog' service shows an elevated p99 latency and an increase in CPU usage, indicated by z-scores of 3.12 and 3.66 respectively. The error rate, however, is not elevated and is actually below baseline. This suggests that there is no immediate outright failure, but the service is experiencing slower processing times and high CPU usage. This pattern suggests a potential latency regression combined with resource exhaustion, which warrants further investigation under these two playbooks."
+          }
+        ]
+      }
+    ]
+  }
+]
