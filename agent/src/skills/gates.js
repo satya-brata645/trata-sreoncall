@@ -19,6 +19,16 @@ const IDENTIFIER_PATTERNS = [
   [/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "literal timestamp"],
 ];
 
+// A learned practice must remain an evidence-led heuristic. This protects
+// against an author accidentally turning a useful reflection into a hidden
+// alert rule or a fixed severity map. It deliberately inspects only authored
+// text, never live telemetry.
+const FORBIDDEN_SKILL_PATTERNS = [
+  [/\b(errorRate|latency|cpu|memory)\s*[<>]=?\s*[\d.]+/i, "looks like a hardcoded numeric threshold"],
+  [/\bif\s*\(.*[<>]=?.*\)\s*(alert|fire|raise)/i, "looks like an if/threshold rule, not a heuristic"],
+  [/severity\s*[:=]\s*['\"]?(sev[1-4]|critical|high|medium|low)['\"]?\s*(always|whenever)/i, "hardcodes a fixed severity mapping"],
+];
+
 function scrubIncidentIdentifiers(text) {
   const hits = [];
   const str = String(text || "");
@@ -26,6 +36,16 @@ function scrubIncidentIdentifiers(text) {
     if (pattern.test(str)) hits.push(label);
   }
   return { clean: hits.length === 0, hits };
+}
+
+function skillContentGate(body) {
+  const text = String(body || "");
+  const identifiers = scrubIncidentIdentifiers(text);
+  if (!identifiers.clean) return { ok: false, reason: `contains ${identifiers.hits.join(", ")}` };
+  for (const [pattern, reason] of FORBIDDEN_SKILL_PATTERNS) {
+    if (pattern.test(text)) return { ok: false, reason };
+  }
+  return { ok: true };
 }
 
 // Structural check: an agent claiming "not already captured" must have
@@ -80,4 +100,4 @@ function promotionGate(candidate, judgment, consensus) {
   return { decision: "PROMOTE", reason: "all gates hold; consensus promoted", failed_gates: [] };
 }
 
-module.exports = { scrubIncidentIdentifiers, hasEvidencedDuplicateSearch, promotionGate };
+module.exports = { scrubIncidentIdentifiers, skillContentGate, hasEvidencedDuplicateSearch, promotionGate };

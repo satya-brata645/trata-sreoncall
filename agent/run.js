@@ -17,9 +17,11 @@ const humanResponse = require("./src/agents/human-response");
 const skillsAuthor = require("./src/skills/author");
 const skills = require("./src/skills/loader");
 const selfAccountability = require("./src/self-accountability");
+const professionalPractice = require("./src/professional-practice");
 const cli = require("./src/surface/cli");
 
 const RETROACTIVE_CHECK_EVERY_N_CYCLES = 5; // operational cadence, not judgment — see PROMPT §0
+const PRACTICE_REVIEW_EVERY_N_CYCLES = 3; // schedule only; recovery/recurrence remains model judgment
 const RUN_ONCE = process.argv.includes("--once");
 
 // Log every lifecycle event to the console as a plain record of work
@@ -56,27 +58,31 @@ async function runOneCycle() {
   if (shouldRunTriage) {
     const triageResult = await triage.runTriage({ window });
     newAlerts = triageResult.alerts;
+    const applications = professionalPractice.recordSkillApplications({
+      state: s,
+      alerts: newAlerts,
+      loadedSkillNames: triageResult.loadedSkillNames,
+    });
     console.log(`[triage] ${newAlerts.length} alert(s) raised. ${triageResult.summary.split("\n")[0]}`);
+    if (applications.length) console.log(`[skills] recorded ${applications.length} evidence-backed skill application(s)`);
     if (newAlerts.length) {
       const target = s.recent_windows[s.recent_windows.length - 1];
       if (target) target.had_alert = true;
     }
 
-    // Receipts: triage named the skills it actually used in each alert's
-    // `skills_applied` — that naming is the model's judgment. Recording it is
-    // bookkeeping, and it's what makes "this skill has been used" checkable
-    // instead of a claim. Nothing downstream may gate on the resulting count.
-    for (const alert of newAlerts) {
-      const rows = skills.recordApplication(alert.skills_applied || [], {
-        alertId: alert.id,
+    // recordSkillApplications (above) is the sole times_applied writer for this
+    // path — it requires a skill be BOTH loaded this run AND cited on an alert,
+    // which recordApplication alone cannot check, so calling it here too would
+    // double-increment the same citation. Its provenance still needs a tracked
+    // home (see the note on APPLICATIONS_LOG in loader.js), which is what
+    // appendProvenance does without touching the counter a second time.
+    for (const entry of applications) {
+      skills.appendProvenance({
+        skill: entry.skill_name,
+        alertId: entry.alert_id,
         run: `cycle-${cycleCount}`,
       });
-      for (const r of rows.filter((x) => x.recorded)) {
-        console.log(`[skills] applied "${r.skill}" (${r.origin}) — times_applied now ${r.times_applied}`);
-      }
-      for (const r of rows.filter((x) => x.recorded === false)) {
-        console.log(`[skills] WARNING: alert cited unknown skill "${r.name}"`);
-      }
+      console.log(`[skills] applied "${entry.skill_name}" — recorded in applications.jsonl`);
     }
   }
 
@@ -85,6 +91,15 @@ async function runOneCycle() {
     console.log(`[correlator] ${correlatorResult.actionsTaken.length} action(s). ${correlatorResult.summary.split("\n")[0]}`);
     for (const action of correlatorResult.actionsTaken) {
       lifecycle.emit(action.type, action);
+      // A resolution additionally schedules professionalPractice's own,
+      // separate evidence-verified follow-up loop (runNextFollowUp, below) —
+      // several LATER independent reviews of whether recovery actually held,
+      // not a one-shot reflection. That is a stronger claim than "I noticed a
+      // pattern once" and deserves its own trigger point.
+      if (action.type === "incident.resolved") {
+        const incident = s.incidents[action.incident_id];
+        professionalPractice.scheduleResolvedIncident({ state: s, incident });
+      }
     }
 
     // Reflect on anything substantive that happened this cycle — not only on a
@@ -125,6 +140,17 @@ async function runOneCycle() {
           ? `[self-check] window ${note.window_observed_at} reviewed — no miss found`
           : `[self-check] MISS FOUND for window ${note.window_observed_at}: ${note.agent_finding}`
       );
+    }
+  }
+
+  // Each resolved incident receives several later independent reviews. This
+  // checks whether observed recovery held and turns model-judged recurrence
+  // into a provenance-carrying playbook only when fresh evidence supports it.
+  if (cycleCount % PRACTICE_REVIEW_EVERY_N_CYCLES === 0) {
+    const review = await professionalPractice.runNextFollowUp(s);
+    if (review) {
+      if (review.skipped) console.log(`[practice] ${review.incident_id}: ${review.reason}`);
+      else console.log(`[practice] ${review.incident_id}: recovery=${review.review.recovery_status}, remaining=${review.reviews_remaining}${review.playbook?.written ? `; playbook ${review.playbook.action}: ${review.playbook.name}` : ""}`);
     }
   }
 

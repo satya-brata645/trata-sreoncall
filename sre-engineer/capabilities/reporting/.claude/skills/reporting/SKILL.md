@@ -25,10 +25,12 @@ executed.
 ### 1. Shift report — always
 
 `$OUTPUT_DIR/shift-report.md`. What was watched, what alerts fired (or didn't), what
-incidents are open/resolved/escalated, what remediations were proposed (with PR links) and
-their status (proposed / merged / deferred), what got learned this shift across every
-capability, and what the next shift needs to know. This is the periodic status communication a
-real on-call engineer sends their team — distinct from `incident-picture.md`'s live-dashboard
+incidents are open/resolved/escalated, who (if anyone) each open incident's own `paging`
+field says was paged or would be paged and why — cite the actual `urgency_reasoning` and
+`target`, never just "paged" — what remediations were proposed (with PR links) and their
+status (proposed / merged / deferred), what got learned this shift across every capability,
+and what the next shift needs to know. This is the periodic status communication a real
+on-call engineer sends their team — distinct from `incident-picture.md`'s live-dashboard
 view, and distinct from a postmortem's incident-specific depth.
 
 A quiet shift with nothing to report is a fine report. Say so in two lines and stop — padding
@@ -47,6 +49,7 @@ written fresh from what actually happened, never filled in from a template:
 # Postmortem — <incident-id>
 ## What happened (headline, 2-3 lines)
 ## Timeline (from the real incident JSON's revisions, with timestamps)
+## Paging (from the incident's `paging` field — decision, who, why, and any escalation/stand-down)
 ## Root cause (from rca, citing the verified evidence)
 ## Remediation (what was proposed, the second opinion, the release-approval decision, the PR link)
 ## Impact (real numbers, from the alert's own evidence — never invented)
@@ -120,24 +123,24 @@ Whenever you write or revise a playbook, experience or baseline, or absorb a cor
 a `learning` event:
 
 ```bash
-curl -sS -m 5 -X POST "${{TRATA_BASE_URL:-http://localhost:3000}}/api/events" \
+curl -sS -m 5 -X POST "${TRATA_BASE_URL:-http://localhost:3000}/api/events" \
   -H 'content-type: application/json' \
-  ${{SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"}} \
-  -d '{{
-    "source": "sre-engineer/{cap}",
+  ${SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"} \
+  -d '{
+    "source": "sre-engineer/reporting",
     "kind": "learning",
     "severity": "info",
     "headline": "<one line: what you now know that you did not before>",
     "incidentId": "<the incident that taught it, if there was one>",
-    "learning": {{
-      "capability": "{cap}",
+    "learning": {
+      "capability": "reporting",
       "artifact": "<repo-relative path to the file you just wrote>",
       "artifactKind": "playbook|experience|baseline",
       "origin": "self-authored|correction-absorbed|revised",
       "lesson": "<what a future run would actually do differently>",
       "correctionRef": "<required when origin is correction-absorbed>"
-    }}
-  }}' || true
+    }
+  }' || true
 ```
 
 **A failed POST must never sink the shift.** The artifact you wrote is already on disk and is

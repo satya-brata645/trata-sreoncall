@@ -75,6 +75,12 @@ for incident_file in "${OUTPUT_DIR}"/incidents/*.json; do
   status="$(python3 -c "import json;print(json.load(open('${incident_file}')).get('status','open'))" 2>/dev/null || echo open)"
   [ "$status" = "resolved" ] || [ "$status" = "closed" ] && continue
 
+  # Paging runs before RCA on purpose: urgency is a function of user impact, which is already
+  # known from alert-grouping's incident, not of root cause, which isn't known yet.
+  run_capability capabilities/on-call-paging \
+    "Run the on-call-paging skill against incident ${incident_id}." \
+    "${BASE_DENY}" "on-call-paging:${incident_id}"
+
   run_capability capabilities/root-cause-analysis \
     "Run the rca skill against incident ${incident_id} if it needs investigation." \
     "${BASE_DENY}" "rca:${incident_id}"

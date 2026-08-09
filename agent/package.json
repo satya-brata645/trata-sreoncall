@@ -6,7 +6,8 @@
   "main": "run.js",
   "scripts": {
     "start": "node run.js",
-    "smoke": "node src/lgtm.js"
+    "smoke": "node src/lgtm.js",
+    "test": "node scripts/test-gates.js && node scripts/test-professional-practice.js"
   },
   "engines": { "node": ">=18" }
 }

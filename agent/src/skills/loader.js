@@ -11,6 +11,7 @@ const path = require("path");
 
 const BASE_DIR = path.join(__dirname, "base");
 const LEARNED_DIR = path.join(__dirname, "learned");
+const PROFESSIONAL_PRACTICES_DIR = path.join(__dirname, "professional-practices");
 
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
@@ -45,20 +46,30 @@ function readSkillFile(dir, filename) {
     evidence_refs: Array.isArray(meta.evidence_refs) ? meta.evidence_refs : [],
     confidence: meta.confidence !== undefined ? Number(meta.confidence) : null,
     times_applied: meta.times_applied !== undefined ? Number(meta.times_applied) : 0,
+    times_verified: meta.times_verified !== undefined ? Number(meta.times_verified) : 0,
+    kind: meta.kind || "skill",
+    last_reviewed_at: meta.last_reviewed_at || null,
     body,
     _dir: dir,
     _filename: filename,
   };
 }
 
+function collectMarkdownFiles(dir, files = []) {
+  if (!fs.existsSync(dir)) return files;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectMarkdownFiles(fullPath, files);
+    else if (entry.isFile() && entry.name.endsWith(".md")) files.push({ dir, filename: entry.name });
+  }
+  return files;
+}
+
 function listAllSkillFiles() {
-  const dirs = [BASE_DIR, LEARNED_DIR];
+  const dirs = [BASE_DIR, PROFESSIONAL_PRACTICES_DIR, LEARNED_DIR];
   const files = [];
   for (const dir of dirs) {
-    if (!fs.existsSync(dir)) continue;
-    for (const filename of fs.readdirSync(dir)) {
-      if (filename.endsWith(".md")) files.push({ dir, filename });
-    }
+    collectMarkdownFiles(dir, files);
   }
   return files;
 }
@@ -122,10 +133,37 @@ function bumpTimesApplied(filePath) {
   return next;
 }
 
+// Appends a provenance row WITHOUT touching times_applied. For callers that
+// already incremented the counter themselves (professionalPractice's
+// recordSkillApplications, which requires a skill be both loaded this run and
+// cited — a stronger check than this file can make on its own) but whose
+// record of *that* still lands only in state.json, under the gitignored
+// src/data/. A counter nobody can inspect is not provenance; this is the fix.
+function appendProvenance({ skill, incidentId, alertId, run }) {
+  const found = loadByName(skill);
+  const row = {
+    at: new Date().toISOString(),
+    skill,
+    origin: found ? found.origin : null,
+    times_applied: found ? found.times_applied : null,
+    incident_id: incidentId || null,
+    alert_id: alertId || null,
+    run: run || null,
+  };
+  fs.mkdirSync(path.dirname(APPLICATIONS_LOG), { recursive: true });
+  fs.appendFileSync(APPLICATIONS_LOG, JSON.stringify(row) + "\n");
+  return row;
+}
+
 // Records that the named skills were actually used on this run. Returns one
 // row per skill so a caller can log or surface it. Unknown names are reported
 // rather than silently dropped — a model citing a skill that doesn't exist is
 // worth seeing, not hiding.
+//
+// Not used for skills already recorded via professionalPractice.
+// recordSkillApplications (see appendProvenance above) — this is for callers
+// that both decide AND increment in one step, e.g. sre-engineer's equivalent
+// script on the Claude-Code side.
 function recordApplication(names, context = {}) {
   const rows = [];
   for (const name of names || []) {
@@ -162,7 +200,9 @@ module.exports = {
   listAllSkillFiles,
   readSkillFile,
   recordApplication,
+  appendProvenance,
   BASE_DIR,
   LEARNED_DIR,
   APPLICATIONS_LOG,
+  PROFESSIONAL_PRACTICES_DIR,
 };

@@ -130,24 +130,24 @@ Whenever you write or revise a playbook, experience or baseline, or absorb a cor
 a `learning` event:
 
 ```bash
-curl -sS -m 5 -X POST "${{TRATA_BASE_URL:-http://localhost:3000}}/api/events" \
+curl -sS -m 5 -X POST "${TRATA_BASE_URL:-http://localhost:3000}/api/events" \
   -H 'content-type: application/json' \
-  ${{SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"}} \
-  -d '{{
-    "source": "sre-engineer/{cap}",
+  ${SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"} \
+  -d '{
+    "source": "sre-engineer/incident-remediation",
     "kind": "learning",
     "severity": "info",
     "headline": "<one line: what you now know that you did not before>",
     "incidentId": "<the incident that taught it, if there was one>",
-    "learning": {{
-      "capability": "{cap}",
+    "learning": {
+      "capability": "incident-remediation",
       "artifact": "<repo-relative path to the file you just wrote>",
       "artifactKind": "playbook|experience|baseline",
       "origin": "self-authored|correction-absorbed|revised",
       "lesson": "<what a future run would actually do differently>",
       "correctionRef": "<required when origin is correction-absorbed>"
-    }}
-  }}' || true
+    }
+  }' || true
 ```
 
 **A failed POST must never sink the shift.** The artifact you wrote is already on disk and is

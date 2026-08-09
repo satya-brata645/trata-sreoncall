@@ -189,16 +189,22 @@ export const OS_APPS: readonly OsAppDefinition[] = [
           "What this app found and what it is telling you — the answer, not the machinery.",
       },
       {
+        id: "chat",
+        label: "Build chat",
+        description:
+          "Dev Mode only. Shape the dashboard and its collection scope before promoting a build.",
+      },
+      {
         id: "history",
         label: "Build history",
         description:
-          "Every version of this app and which one is live. For 'what changed' and 'go back to the previous one'.",
+          "Dev Mode only. Every version of this app and which one is live. Use it to inspect or roll back a build.",
       },
       {
         id: "activity",
         label: "App logs",
         description:
-          "What the app did while it ran. Bring this up when a result looks wrong and the question is why.",
+          "Dev Mode only. What the app did while it refreshed; use it when a result looks wrong and the question is why.",
       },
     ],
   },

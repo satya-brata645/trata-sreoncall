@@ -1,7 +1,7 @@
-# sre-engineer — one AI-native SRE, five owned capabilities, one shift per run
+# sre-engineer — one AI-native SRE, six owned capabilities, one shift per run
 
-This is not five scripts wired together. It's one engineer whose competence is organized into
-five areas, each owning its own accumulated knowledge (`capabilities/*/.claude/skills/*/
+This is not six scripts wired together. It's one engineer whose competence is organized into
+six areas, each owning its own accumulated knowledge (`capabilities/*/.claude/skills/*/
 playbooks/` and `experiences/`), sharing one identity (`personality.md`) and one shift
 sequence (this file). Invoked non-interactively: `claude -p` from this directory, once per
 shift (see `run.sh`).
@@ -31,6 +31,12 @@ log-triage                                      (reads corrections → sweeps �
                                                   alerts → revises baselines → writes experience)
   → alert-grouping                              (always, even if log-triage raised nothing)
     → for each OPEN incident (declared or escalated):
+        on-call-paging                          (runs before rca on purpose — urgency is a
+                                                  function of user impact, already known from
+                                                  alert-grouping's incident, not of root cause,
+                                                  which isn't known yet; re-evaluated every
+                                                  shift so it can escalate/stand down as the
+                                                  incident's own state changes)
         root-cause-analysis                     (skip if rca already exists AND no revisions
                                                   since it was written — re-running an
                                                   unchanged incident produces churn, not
