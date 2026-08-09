@@ -11,7 +11,8 @@ cd "$(dirname "$0")"
 
 TIMESTAMP="$(date -u +%Y%m%d_%H%M%S)"
 OUTPUT_DIR="outputs/${TIMESTAMP}"
-mkdir -p "${OUTPUT_DIR}/alerts" "${OUTPUT_DIR}/incidents" "${OUTPUT_DIR}/logs"
+mkdir -p "${OUTPUT_DIR}/alerts" "${OUTPUT_DIR}/incidents" "${OUTPUT_DIR}/logs" \
+         "${OUTPUT_DIR}/rca" "${OUTPUT_DIR}/remediation" "${OUTPUT_DIR}/postmortems"
 
 # Carry forward any still-open incidents from the most recent prior run, per
 # CLAUDE.md's "Prior state" rule — an incident stays open across shifts until
@@ -24,13 +25,28 @@ if [ -n "${LAST_RUN}" ] && [ -d "${LAST_RUN}incidents" ]; then
     if [ "$status" != "resolved" ] && [ "$status" != "closed" ]; then
       cp "$f" "${OUTPUT_DIR}/incidents/"
       echo "Carried forward open incident: $(basename "$f") (status: $status)"
+      # Its RCA and remediation come with it. A carried-forward incident whose
+      # rca_ref points at a file left behind in the previous run's folder reads
+      # as "already root-caused" while the analysis itself is unreachable —
+      # so the shift would neither redo it nor be able to build on it.
+      for ref in $(python3 -c "
+import json
+d = json.load(open('$f'))
+print(' '.join(filter(None, [d.get('rca_ref'), d.get('remediation_ref')])))
+" 2>/dev/null || true); do
+        if [ -e "${LAST_RUN}${ref}" ]; then
+          cp "${LAST_RUN}${ref}" "${OUTPUT_DIR}/${ref}"
+        else
+          echo "  warning: ${ref} referenced but missing from ${LAST_RUN}"
+        fi
+      done
     fi
   done
 fi
 
 echo "OUTPUT_DIR=${OUTPUT_DIR}"
 
-PROMPT="Follow this project's CLAUDE.md exactly for one shift cycle. OUTPUT_DIR=${OUTPUT_DIR} (already created, already has alerts/, incidents/, logs/ subfolders, and any carried-forward open incidents). Run log-triage, then always alert-grouping, then self-skilling if an incident resolved this run, then rewrite incident-picture.md. Do not ask questions — this runs unattended."
+PROMPT="Follow this project's CLAUDE.md exactly for one shift cycle. OUTPUT_DIR=${OUTPUT_DIR} (already created, already has alerts/, incidents/, logs/, rca/, remediation/, postmortems/ subfolders, and any carried-forward open incidents with their prior RCA/remediation). Run log-triage, then always alert-grouping, then root-cause for each incident lacking an rca_ref, then remediation for each incident that has an rca_ref but no remediation_ref, then — only if an incident genuinely RESOLVEd this run (not one closed out by MERGE or SPLIT) — postmortem followed by self-skilling, then rewrite incident-picture.md. Never toggle a flag or otherwise write to the target system; the only write permitted anywhere is remediation's draft PR on our own repo. Do not ask questions — this runs unattended."
 
 claude -p "${PROMPT}" \
   --output-format stream-json \
@@ -40,5 +56,6 @@ claude -p "${PROMPT}" \
   2> "${OUTPUT_DIR}/logs/session.stderr.log"
 
 echo "Session complete. Full reasoning trace: ${OUTPUT_DIR}/logs/session.jsonl"
+echo "Drill-down: ${OUTPUT_DIR}/{alerts,incidents,rca,remediation,postmortems}/"
 echo "Headline: ${OUTPUT_DIR}/incident-picture.md"
 [ -f "${OUTPUT_DIR}/incident-picture.md" ] && cat "${OUTPUT_DIR}/incident-picture.md"
