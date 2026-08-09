@@ -29,7 +29,10 @@ is a value, not a limitation.
 log-triage
   → alert-grouping                              (always, even if log-triage raised nothing)
     → for each OPEN incident (declared or escalated):
-        root-cause-analysis                     (if not yet investigated, or new evidence exists)
+        root-cause-analysis                     (skip if rca already exists AND no revisions
+                                                  since it was written — re-running an
+                                                  unchanged incident produces churn, not
+                                                  insight, not a genuine re-investigation)
           → incident-remediation/remediation     (only if rca.verified == true, not yet remediated)
             → incident-remediation/release-approval  (if remediation opened a PR, or one is still open)
 → reporting                                       (ALWAYS, last, unconditionally)
@@ -66,8 +69,14 @@ sequence is allowed to be silently skipped because there was "nothing to report.
 
 ## Environment
 
-`.env` at the repo root three levels up (`../../../.env`) has `MANAGED_MIMIR_URL`,
-`MANAGED_LOKI_URL`, `MANAGED_TEMPO_URL`, `MANAGED_LGTM_ORG_ID`. Requires VPN/office network
-access to `10.10.0.0/24` or `10.10.1.0/24`. Never query `10.10.1.21` — that's real production.
-`gh` is authenticated for this team's onboarded repo (`satya-brata645/trata-sreoncall`) — that
-is the only repo `incident-remediation` ever writes to.
+`.env` lives at the repository root — its exact relative depth from wherever a given
+capability runs varies (each capability `cd`s into its own folder), so don't assume a fixed
+number of `../`; check `git rev-parse --show-toplevel` if you need the exact path, or rely on
+the hardcoded defaults already written into each skill's own connection section, which work
+without `.env` present at all. Has `MANAGED_MIMIR_URL`, `MANAGED_LOKI_URL`,
+`MANAGED_TEMPO_URL`, `MANAGED_LGTM_ORG_ID`. Requires VPN/office network access to
+`10.10.0.0/24` or `10.10.1.0/24`. Never query `10.10.1.21` — that's real production.
+
+The team's onboarded repo URL is at `.hackathon-team.json` (repository root) — read it rather
+than assuming a fixed slug, so this keeps working if the repo is ever renamed or forked. `gh`
+is authenticated for it; that repo is the only one `incident-remediation` ever writes to.
