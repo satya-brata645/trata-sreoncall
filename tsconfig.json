@@ -25,6 +25,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@disco/core": [
+        "./packages/disco-core/src/index.ts"
+      ],
+      "@disco/core/*": [
+        "./packages/disco-core/src/*"
       ]
     }
   },

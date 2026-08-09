@@ -1,0 +1,22 @@
+{
+  "id": "2026-08-09T12-00-00-000Z",
+  "asOf": "2026-08-09T12:00:00.000Z",
+  "windowDays": 14,
+  "producedAt": "2026-08-09T12:00:00.000Z",
+  "seed": 20260809,
+  "generator": "disco-sre-seed@1",
+  "tables": {
+    "metrics": 14,
+    "metric_spark": 42,
+    "pipeline": 8,
+    "attention": 13,
+    "service_axes": 8,
+    "incidents": 70,
+    "services": 8,
+    "sources": 6,
+    "alert_series": 336,
+    "cause_mix": 7,
+    "severity_mix": 4,
+    "incident_heat": 56
+  }
+}

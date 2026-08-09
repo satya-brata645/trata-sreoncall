@@ -15,6 +15,7 @@
  */
 
 import type { EventSeverity, SreEvent } from "./events";
+import { signatureForEvent, type MemoryTrace } from "./memory/traces";
 
 const SEVERITY_WEIGHT: Record<EventSeverity, number> = {
   critical: 4,
@@ -82,6 +83,50 @@ export function split(events: readonly SreEvent[]): {
   const rest: SreEvent[] = [];
   for (const event of events) {
     (score(event).matters ? mattering : rest).push(event);
+  }
+  return { mattering, rest };
+}
+
+export interface SalienceMemory {
+  working: readonly MemoryTrace[];
+  episodes: readonly MemoryTrace[];
+  longTerm: readonly MemoryTrace[];
+}
+
+/**
+ * The standing score is intentionally unchanged. The heartbeat has the full
+ * memory picture, so it composes context here without putting disk I/O on the
+ * ingest route's hot path.
+ */
+export function scoreInContext(event: SreEvent, memory: SalienceMemory, now = new Date()): SalienceScore {
+  const base = score(event);
+  const signature = signatureForEvent(event);
+  const all = [...memory.working, ...memory.episodes, ...memory.longTerm];
+  const same = all.filter((trace) => trace.signature === signature);
+  const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60_000;
+  const hourAgo = now.getTime() - 60 * 60_000;
+  const seenRecently = same.some((trace) => Date.parse(trace.lastHitAt) >= sevenDaysAgo);
+  const repeatsInHour = same.filter((trace) => Date.parse(trace.lastHitAt) >= hourAgo).length;
+  const novelty = same.length === 0 ? 1 : seenRecently ? 0 : 0.5;
+  const habituation = Math.min(0.6, repeatsInHour * 0.15);
+  const openIncident = Boolean(event.incidentId && memory.working.some((trace) => trace.incidentId === event.incidentId));
+  const weight = base.weight + novelty - habituation + (openIncident ? 1 : 0);
+  const reasons = [base.because];
+  if (novelty === 1) reasons.push("never seen before");
+  else if (novelty > 0) reasons.push("not seen in seven days");
+  if (habituation > 0) reasons.push(`repeated recently (-${habituation.toFixed(2)})`);
+  if (openIncident) reasons.push("touches an open incident");
+  return { weight, matters: weight >= MATTERS_WEIGHT, because: reasons.join(", ") };
+}
+
+export function splitInContext(events: readonly SreEvent[], memory: SalienceMemory, now = new Date()): {
+  mattering: SreEvent[];
+  rest: SreEvent[];
+} {
+  const mattering: SreEvent[] = [];
+  const rest: SreEvent[] = [];
+  for (const event of events) {
+    (scoreInContext(event, memory, now).matters ? mattering : rest).push(event);
   }
   return { mattering, rest };
 }

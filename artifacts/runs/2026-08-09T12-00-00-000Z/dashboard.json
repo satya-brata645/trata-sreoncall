@@ -1,0 +1,4464 @@
+{
+  "run": {
+    "id": "2026-08-09T12-00-00-000Z",
+    "asOf": "2026-08-09T12:00:00.000Z",
+    "windowDays": 14,
+    "producedAt": "2026-08-09T12:00:00.000Z"
+  },
+  "metrics": [
+    {
+      "id": "mttr",
+      "label": "MTTR",
+      "value": 27,
+      "unit": "min",
+      "delta": -22.857,
+      "inverse": true,
+      "breach": false,
+      "basis": "median of 27 incidents in the last 7 days",
+      "meaning": "Median time from failure starting to service being restored — detect, acknowledge and mitigate combined."
+    },
+    {
+      "id": "mtta",
+      "label": "MTTA",
+      "value": 7,
+      "unit": "min",
+      "delta": 0,
+      "inverse": true,
+      "breach": false,
+      "basis": "median across incidents a human handled; auto-remediated ones excluded",
+      "meaning": "Median time from an alert firing to a human taking ownership of it."
+    },
+    {
+      "id": "mttd",
+      "label": "MTTD",
+      "value": 3,
+      "unit": "min",
+      "delta": -25,
+      "inverse": true,
+      "breach": false,
+      "basis": "median of 27 incidents",
+      "meaning": "Median time between a failure beginning and monitoring noticing it."
+    },
+    {
+      "id": "mtbf",
+      "label": "MTBF",
+      "value": 4.8,
+      "unit": "hours",
+      "delta": 59.259,
+      "inverse": false,
+      "breach": false,
+      "basis": "14 days ÷ 70 incidents",
+      "meaning": "Mean hours between incidents. Rising is good — failures are getting rarer."
+    },
+    {
+      "id": "availability",
+      "label": "Availability",
+      "value": 99.85,
+      "unit": "pct",
+      "delta": null,
+      "inverse": false,
+      "breach": true,
+      "basis": "unweighted mean of 8 services",
+      "meaning": "Mean availability across all monitored services for the window."
+    },
+    {
+      "id": "burn",
+      "label": "Worst budget burn",
+      "value": 3.17,
+      "unit": "x",
+      "delta": null,
+      "inverse": true,
+      "breach": true,
+      "basis": "worst of 8 services",
+      "meaning": "Fraction of the period's error budget already spent by the worst service. Above 1 means the SLO is already missed."
+    },
+    {
+      "id": "noise",
+      "label": "Alert noise",
+      "value": 67.331,
+      "unit": "pct",
+      "delta": null,
+      "inverse": true,
+      "breach": true,
+      "basis": "1,521 of 2,259 alerts",
+      "meaning": "Share of alerts that closed with no incident and no action. This is what burns out on-call."
+    },
+    {
+      "id": "ratio",
+      "label": "Alerts per incident",
+      "value": 32.271,
+      "unit": "ratio",
+      "delta": null,
+      "inverse": true,
+      "breach": false,
+      "basis": "2,259 alerts ÷ 70 incidents",
+      "meaning": "How many alerts fire for each real incident. High values mean grouping rules are not doing their job."
+    },
+    {
+      "id": "auto",
+      "label": "Auto-remediated",
+      "value": 30,
+      "unit": "pct",
+      "delta": null,
+      "inverse": false,
+      "breach": false,
+      "basis": "of 70 incidents",
+      "meaning": "Incidents automation closed without waking anyone. The single best lever on on-call load."
+    },
+    {
+      "id": "escalation",
+      "label": "Escalation rate",
+      "value": 15.714,
+      "unit": "pct",
+      "delta": null,
+      "inverse": true,
+      "breach": false,
+      "basis": "of 70 incidents",
+      "meaning": "Incidents the first responder could not resolve alone. A proxy for runbook and access gaps."
+    },
+    {
+      "id": "rca",
+      "label": "RCA coverage",
+      "value": 68.421,
+      "unit": "pct",
+      "delta": null,
+      "inverse": false,
+      "breach": true,
+      "basis": "13 of 19 SEV1/SEV2 incidents",
+      "meaning": "Share of critical and major incidents that have a written root cause."
+    },
+    {
+      "id": "repeat",
+      "label": "Repeat incidents",
+      "value": 47.143,
+      "unit": "pct",
+      "delta": null,
+      "inverse": true,
+      "breach": true,
+      "basis": "of 70 incidents",
+      "meaning": "Incidents with the same service and root cause as an earlier one. Repeats mean the fix did not stick."
+    },
+    {
+      "id": "ack_sla",
+      "label": "Ack SLA met",
+      "value": 97.959,
+      "unit": "pct",
+      "delta": null,
+      "inverse": false,
+      "breach": false,
+      "basis": "1 breaches across human-handled incidents",
+      "meaning": "Incidents acknowledged inside the promise for their severity — 5 minutes for a SEV1."
+    },
+    {
+      "id": "open",
+      "label": "Open incidents",
+      "value": 37,
+      "unit": "count",
+      "delta": null,
+      "inverse": true,
+      "breach": true,
+      "basis": "2 of them critical",
+      "meaning": "Incidents not yet fully resolved, at any stage of the pipeline."
+    }
+  ],
+  "metric_spark": [
+    {
+      "metric_id": "mttr",
+      "t": "2026-07-27T12:00:00.000Z",
+      "v": 45
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-07-28T12:00:00.000Z",
+      "v": 34
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-07-29T12:00:00.000Z",
+      "v": 31
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-07-30T12:00:00.000Z",
+      "v": 65
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-07-31T12:00:00.000Z",
+      "v": 23
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-01T12:00:00.000Z",
+      "v": 20
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-02T12:00:00.000Z",
+      "v": 45.5
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-03T12:00:00.000Z",
+      "v": 15
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-04T12:00:00.000Z",
+      "v": 17
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-05T12:00:00.000Z",
+      "v": 24
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-06T12:00:00.000Z",
+      "v": 37
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-07T12:00:00.000Z",
+      "v": 28
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-08T12:00:00.000Z",
+      "v": 16
+    },
+    {
+      "metric_id": "mttr",
+      "t": "2026-08-09T12:00:00.000Z",
+      "v": 85
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-07-27T12:00:00.000Z",
+      "v": 4.5
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-07-28T12:00:00.000Z",
+      "v": 8
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-07-29T12:00:00.000Z",
+      "v": 6
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-07-30T12:00:00.000Z",
+      "v": 7.5
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-07-31T12:00:00.000Z",
+      "v": 7
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-01T12:00:00.000Z",
+      "v": 11
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-02T12:00:00.000Z",
+      "v": 9
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-03T12:00:00.000Z",
+      "v": 3
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-04T12:00:00.000Z",
+      "v": 7
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-05T12:00:00.000Z",
+      "v": 8
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-06T12:00:00.000Z",
+      "v": 7.5
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-07T12:00:00.000Z",
+      "v": 8
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-08T12:00:00.000Z",
+      "v": 0
+    },
+    {
+      "metric_id": "mtta",
+      "t": "2026-08-09T12:00:00.000Z",
+      "v": 12
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-07-27T12:00:00.000Z",
+      "v": 3
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-07-28T12:00:00.000Z",
+      "v": 4
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-07-29T12:00:00.000Z",
+      "v": 2.5
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-07-30T12:00:00.000Z",
+      "v": 5
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-07-31T12:00:00.000Z",
+      "v": 4
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-01T12:00:00.000Z",
+      "v": 5.5
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-02T12:00:00.000Z",
+      "v": 4.5
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-03T12:00:00.000Z",
+      "v": 1
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-04T12:00:00.000Z",
+      "v": 5
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-05T12:00:00.000Z",
+      "v": 3
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-06T12:00:00.000Z",
+      "v": 3
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-07T12:00:00.000Z",
+      "v": 6
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-08T12:00:00.000Z",
+      "v": 4
+    },
+    {
+      "metric_id": "mttd",
+      "t": "2026-08-09T12:00:00.000Z",
+      "v": 4
+    }
+  ],
+  "pipeline": [
+    {
+      "order": 0,
+      "stage": "Signals",
+      "count": 3089863,
+      "attrition": 0,
+      "attrition_reason": "",
+      "median_min": null,
+      "detail": "Raw datapoints across 6 connected sources."
+    },
+    {
+      "order": 1,
+      "stage": "Alerts fired",
+      "count": 2259,
+      "attrition": 3087604,
+      "attrition_reason": "below threshold — normal operation",
+      "median_min": null,
+      "detail": "Signals that crossed a rule threshold."
+    },
+    {
+      "order": 2,
+      "stage": "After dedup",
+      "count": 738,
+      "attrition": 1521,
+      "attrition_reason": "noise: auto-closed, no action taken",
+      "median_min": null,
+      "detail": "Alerts left once duplicates were grouped and known-noise was suppressed."
+    },
+    {
+      "order": 3,
+      "stage": "Incidents",
+      "count": 70,
+      "attrition": 668,
+      "attrition_reason": "handled without declaring an incident",
+      "median_min": 4,
+      "detail": "Alert groups a human or policy promoted to a declared incident."
+    },
+    {
+      "order": 4,
+      "stage": "Acknowledged",
+      "count": 70,
+      "attrition": 0,
+      "attrition_reason": "still unacknowledged",
+      "median_min": 7,
+      "detail": "Incidents someone has taken ownership of."
+    },
+    {
+      "order": 5,
+      "stage": "Mitigated",
+      "count": 68,
+      "attrition": 2,
+      "attrition_reason": "still impacting",
+      "median_min": 20,
+      "detail": "Customer impact has ended, whether or not the cause is understood."
+    },
+    {
+      "order": 6,
+      "stage": "Root cause",
+      "count": 33,
+      "attrition": 35,
+      "attrition_reason": "cause never established",
+      "median_min": 241,
+      "detail": "Incidents with a written, agreed root cause."
+    },
+    {
+      "order": 7,
+      "stage": "Postmortem",
+      "count": 16,
+      "attrition": 17,
+      "attrition_reason": "no postmortem published",
+      "median_min": null,
+      "detail": "Written up and shared, with actions assigned."
+    }
+  ],
+  "attention": [
+    {
+      "id": "p1-INC-4215",
+      "severity": "breach",
+      "title": "INC-4215 · Elevated 5xx after release",
+      "detail": "media-transcode — critical, still rca pending after 11.7d.",
+      "urgency": 379.983,
+      "meta": "M. Lindqvist"
+    },
+    {
+      "id": "p1-INC-4202",
+      "severity": "breach",
+      "title": "INC-4202 · Partner API rate limiting",
+      "detail": "ledger-db — critical, still rca pending after 4.8d.",
+      "urgency": 214.217,
+      "meta": "T. Alvarez"
+    },
+    {
+      "id": "burn-search-index",
+      "severity": "breach",
+      "title": "search-index error budget exhausted",
+      "detail": "317% of the budget spent — the 99.9% SLO is already missed for this period.",
+      "urgency": 111.7,
+      "meta": "99.683% vs 99.9%"
+    },
+    {
+      "id": "burn-media-transcode",
+      "severity": "breach",
+      "title": "media-transcode error budget exhausted",
+      "detail": "266% of the budget spent — the 99.9% SLO is already missed for this period.",
+      "urgency": 106.6,
+      "meta": "99.734% vs 99.9%"
+    },
+    {
+      "id": "burn-ledger-db",
+      "severity": "breach",
+      "title": "ledger-db error budget exhausted",
+      "detail": "254% of the budget spent — the 99.95% SLO is already missed for this period.",
+      "urgency": 105.4,
+      "meta": "99.873% vs 99.95%"
+    },
+    {
+      "id": "burn-checkout-api",
+      "severity": "breach",
+      "title": "checkout-api error budget exhausted",
+      "detail": "247% of the budget spent — the 99.9% SLO is already missed for this period.",
+      "urgency": 104.7,
+      "meta": "99.753% vs 99.9%"
+    },
+    {
+      "id": "burn-notification-worker",
+      "severity": "breach",
+      "title": "notification-worker error budget exhausted",
+      "detail": "103% of the budget spent — the 99.9% SLO is already missed for this period.",
+      "urgency": 90.3,
+      "meta": "99.897% vs 99.9%"
+    },
+    {
+      "id": "burn-edge-cdn",
+      "severity": "risk",
+      "title": "edge-cdn error budget at risk",
+      "detail": "99% of the budget spent with time still to run.",
+      "urgency": 89.9,
+      "meta": "99.901% vs 99.9%"
+    },
+    {
+      "id": "burn-payments-gateway",
+      "severity": "risk",
+      "title": "payments-gateway error budget at risk",
+      "detail": "83% of the budget spent with time still to run.",
+      "urgency": 88.3,
+      "meta": "99.958% vs 99.95%"
+    },
+    {
+      "id": "ack-sla",
+      "severity": "breach",
+      "title": "1 incident acknowledged late",
+      "detail": "Worst was INC-4202 at 6m against a 5-minute promise.",
+      "urgency": 71,
+      "meta": "on-call routing"
+    },
+    {
+      "id": "rca-stale",
+      "severity": "stale",
+      "title": "31 incidents awaiting root cause for over 3 days",
+      "detail": "Service was restored but the cause was never written down, so nothing stops it recurring.",
+      "urgency": 55,
+      "meta": "INC-4213, INC-4256, INC-4227"
+    },
+    {
+      "id": "repeats",
+      "severity": "risk",
+      "title": "33 repeat incidents this window",
+      "detail": "auth-service alone accounts for 5. A recurring cause means the previous fix did not hold.",
+      "urgency": 50,
+      "meta": "auth-service"
+    },
+    {
+      "id": "noise-loki",
+      "severity": "noise",
+      "title": "Loki is 78% noise",
+      "detail": "425 of 542 alerts closed with no action. Tuning this is the cheapest win available.",
+      "urgency": 40,
+      "meta": "logs"
+    }
+  ],
+  "service_axes": [
+    {
+      "service": "checkout-api",
+      "Availability": 75,
+      "Latency": 83,
+      "Errors": 25,
+      "Headroom": 62,
+      "Change safety": 28,
+      "Budget left": 0
+    },
+    {
+      "service": "payments-gateway",
+      "Availability": 96,
+      "Latency": 64,
+      "Errors": 57,
+      "Headroom": 52,
+      "Change safety": 85,
+      "Budget left": 17
+    },
+    {
+      "service": "auth-service",
+      "Availability": 100,
+      "Latency": 40,
+      "Errors": 39,
+      "Headroom": 40,
+      "Change safety": 35,
+      "Budget left": 100
+    },
+    {
+      "service": "search-index",
+      "Availability": 68,
+      "Latency": 87,
+      "Errors": 80,
+      "Headroom": 21,
+      "Change safety": 53,
+      "Budget left": 0
+    },
+    {
+      "service": "notification-worker",
+      "Availability": 90,
+      "Latency": 16,
+      "Errors": 80,
+      "Headroom": 37,
+      "Change safety": 35,
+      "Budget left": 0
+    },
+    {
+      "service": "media-transcode",
+      "Availability": 73,
+      "Latency": 0,
+      "Errors": 68,
+      "Headroom": 65,
+      "Change safety": 85,
+      "Budget left": 0
+    },
+    {
+      "service": "ledger-db",
+      "Availability": 87,
+      "Latency": 76,
+      "Errors": 60,
+      "Headroom": 37,
+      "Change safety": 60,
+      "Budget left": 0
+    },
+    {
+      "service": "edge-cdn",
+      "Availability": 90,
+      "Latency": 34,
+      "Errors": 49,
+      "Headroom": 63,
+      "Change safety": 45,
+      "Budget left": 1
+    }
+  ],
+  "incidents": [
+    {
+      "id": "INC-4233",
+      "title": "Latency regression from rollout",
+      "service": "auth-service",
+      "severity": "SEV4",
+      "state": "acknowledged",
+      "started_at": "2026-08-09T11:56:26.449Z",
+      "detect_min": 4,
+      "ack_min": 15,
+      "mitigate_min": 66,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 8,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4201",
+      "title": "Crash loop after deploy",
+      "service": "ledger-db",
+      "severity": "SEV4",
+      "state": "acknowledged",
+      "started_at": "2026-08-09T11:34:41.890Z",
+      "detect_min": 3,
+      "ack_min": 12,
+      "mitigate_min": 81,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4205",
+      "title": "Third-party timeout spike",
+      "service": "payments-gateway",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-08T18:44:13.859Z",
+      "detect_min": 7,
+      "ack_min": 9,
+      "mitigate_min": 52,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 8,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4248",
+      "title": "Elevated 5xx after release",
+      "service": "ledger-db",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-08-07T20:47:41.573Z",
+      "detect_min": 4,
+      "ack_min": 0,
+      "mitigate_min": 12,
+      "rca_min": 225,
+      "root_cause": "bad_deploy",
+      "alert_count": 9,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4266",
+      "title": "AZ network partition",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-07T07:46:11.467Z",
+      "detect_min": 6,
+      "ack_min": 4,
+      "mitigate_min": 18,
+      "rca_min": null,
+      "root_cause": "infra_failure",
+      "alert_count": 4,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "S. Baptiste",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4236",
+      "title": "Node pool eviction",
+      "service": "media-transcode",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-07T01:45:32.202Z",
+      "detect_min": 2,
+      "ack_min": 12,
+      "mitigate_min": 31,
+      "rca_min": null,
+      "root_cause": "infra_failure",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4218",
+      "title": "AZ network partition",
+      "service": "auth-service",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-06T21:11:48.920Z",
+      "detect_min": 10,
+      "ack_min": 0,
+      "mitigate_min": 11,
+      "rca_min": null,
+      "root_cause": "infra_failure",
+      "alert_count": 14,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4213",
+      "title": "Upstream provider degraded",
+      "service": "payments-gateway",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-06T06:11:09.989Z",
+      "detect_min": 2,
+      "ack_min": 4,
+      "mitigate_min": 17,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4245",
+      "title": "Queue backlog growing",
+      "service": "payments-gateway",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-08-06T05:03:11.515Z",
+      "detect_min": 5,
+      "ack_min": 32,
+      "mitigate_min": 55,
+      "rca_min": 1049,
+      "root_cause": "capacity",
+      "alert_count": 11,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4214",
+      "title": "Queue backlog growing",
+      "service": "search-index",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-08-05T22:10:55.821Z",
+      "detect_min": 1,
+      "ack_min": 11,
+      "mitigate_min": 25,
+      "rca_min": 100,
+      "root_cause": "capacity",
+      "alert_count": 12,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4256",
+      "title": "Feature flag misfire",
+      "service": "search-index",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-05T21:06:24.108Z",
+      "detect_min": 3,
+      "ack_min": 0,
+      "mitigate_min": 7,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 13,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4227",
+      "title": "Schema drift in ingest",
+      "service": "search-index",
+      "severity": "SEV2",
+      "state": "rca_pending",
+      "started_at": "2026-08-05T20:11:10.829Z",
+      "detect_min": 4,
+      "ack_min": 4,
+      "mitigate_min": 61,
+      "rca_min": null,
+      "root_cause": "data_quality",
+      "alert_count": 5,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4258",
+      "title": "Partner API rate limiting",
+      "service": "media-transcode",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-08-05T11:31:52.148Z",
+      "detect_min": 3,
+      "ack_min": 13,
+      "mitigate_min": 56,
+      "rca_min": 259,
+      "root_cause": "dependency",
+      "alert_count": 9,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4246",
+      "title": "Elevated 5xx after release",
+      "service": "media-transcode",
+      "severity": "SEV2",
+      "state": "rca_pending",
+      "started_at": "2026-08-05T05:26:24.597Z",
+      "detect_min": 3,
+      "ack_min": 10,
+      "mitigate_min": 39,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4230",
+      "title": "Secret rotation broke auth",
+      "service": "search-index",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-04T23:56:19.853Z",
+      "detect_min": 3,
+      "ack_min": 0,
+      "mitigate_min": 15,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 1,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4253",
+      "title": "Secret rotation broke auth",
+      "service": "edge-cdn",
+      "severity": "SEV1",
+      "state": "resolved",
+      "started_at": "2026-08-04T23:47:57.691Z",
+      "detect_min": 1,
+      "ack_min": 3,
+      "mitigate_min": 20,
+      "rca_min": 177,
+      "root_cause": "config_change",
+      "alert_count": 20,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4261",
+      "title": "Bad routing rule",
+      "service": "notification-worker",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-04T21:56:26.340Z",
+      "detect_min": 5,
+      "ack_min": 21,
+      "mitigate_min": 52,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 4,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4202",
+      "title": "Partner API rate limiting",
+      "service": "ledger-db",
+      "severity": "SEV1",
+      "state": "rca_pending",
+      "started_at": "2026-08-04T17:47:07.441Z",
+      "detect_min": 3,
+      "ack_min": 6,
+      "mitigate_min": 14,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 30,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4211",
+      "title": "Feature flag misfire",
+      "service": "checkout-api",
+      "severity": "SEV1",
+      "state": "resolved",
+      "started_at": "2026-08-04T15:05:01.392Z",
+      "detect_min": 1,
+      "ack_min": 3,
+      "mitigate_min": 19,
+      "rca_min": 241,
+      "root_cause": "config_change",
+      "alert_count": 31,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4210",
+      "title": "Partner API rate limiting",
+      "service": "edge-cdn",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-04T05:31:13.206Z",
+      "detect_min": 5,
+      "ack_min": 0,
+      "mitigate_min": 5,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 3,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4228",
+      "title": "Crash loop after deploy",
+      "service": "edge-cdn",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-08-04T03:50:56.148Z",
+      "detect_min": 7,
+      "ack_min": 0,
+      "mitigate_min": 8,
+      "rca_min": 274,
+      "root_cause": "bad_deploy",
+      "alert_count": 14,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4223",
+      "title": "Partner API rate limiting",
+      "service": "notification-worker",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-03T23:22:22.114Z",
+      "detect_min": 13,
+      "ack_min": 7,
+      "mitigate_min": 112,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 7,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4241",
+      "title": "Unexplained latency spike",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-03T20:02:56.027Z",
+      "detect_min": 2,
+      "ack_min": 7,
+      "mitigate_min": 26,
+      "rca_min": null,
+      "root_cause": "unknown",
+      "alert_count": 4,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4219",
+      "title": "Feature flag misfire",
+      "service": "notification-worker",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-08-03T19:46:55.887Z",
+      "detect_min": 1,
+      "ack_min": 0,
+      "mitigate_min": 4,
+      "rca_min": 159,
+      "root_cause": "config_change",
+      "alert_count": 11,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4208",
+      "title": "Crash loop after deploy",
+      "service": "media-transcode",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-03T16:51:35.656Z",
+      "detect_min": 11,
+      "ack_min": 0,
+      "mitigate_min": 6,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 2,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4217",
+      "title": "Connection pool exhausted",
+      "service": "media-transcode",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-08-03T12:59:52.913Z",
+      "detect_min": 1,
+      "ack_min": 6,
+      "mitigate_min": 20,
+      "rca_min": 135,
+      "root_cause": "capacity",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4216",
+      "title": "Elevated 5xx after release",
+      "service": "search-index",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-08-03T07:29:06.820Z",
+      "detect_min": 1,
+      "ack_min": 3,
+      "mitigate_min": 11,
+      "rca_min": 365,
+      "root_cause": "bad_deploy",
+      "alert_count": 6,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4235",
+      "title": "Third-party timeout spike",
+      "service": "checkout-api",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-02T08:36:39.293Z",
+      "detect_min": 9,
+      "ack_min": 0,
+      "mitigate_min": 7,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 9,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4257",
+      "title": "Disk pressure on primary",
+      "service": "search-index",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-02T03:03:46.347Z",
+      "detect_min": 2,
+      "ack_min": 4,
+      "mitigate_min": 49,
+      "rca_min": null,
+      "root_cause": "capacity",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4204",
+      "title": "Schema drift in ingest",
+      "service": "notification-worker",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-08-01T23:26:29.128Z",
+      "detect_min": 5,
+      "ack_min": 11,
+      "mitigate_min": 20,
+      "rca_min": 169,
+      "root_cause": "data_quality",
+      "alert_count": 7,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4249",
+      "title": "Secret rotation broke auth",
+      "service": "checkout-api",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-01T22:26:11.523Z",
+      "detect_min": 4,
+      "ack_min": 7,
+      "mitigate_min": 66,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 13,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4200",
+      "title": "Intermittent errors under investigation",
+      "service": "payments-gateway",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-08-01T13:42:07.016Z",
+      "detect_min": 14,
+      "ack_min": 22,
+      "mitigate_min": 146,
+      "rca_min": 309,
+      "root_cause": "unknown",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4221",
+      "title": "Intermittent errors under investigation",
+      "service": "edge-cdn",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-08-01T12:06:48.242Z",
+      "detect_min": 2,
+      "ack_min": 0,
+      "mitigate_min": 3,
+      "rca_min": null,
+      "root_cause": "unknown",
+      "alert_count": 3,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4231",
+      "title": "Upstream provider degraded",
+      "service": "notification-worker",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-08-01T09:36:04.221Z",
+      "detect_min": 10,
+      "ack_min": 18,
+      "mitigate_min": 84,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 12,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4265",
+      "title": "Stale cache served",
+      "service": "media-transcode",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-08-01T07:46:48.933Z",
+      "detect_min": 4,
+      "ack_min": 11,
+      "mitigate_min": 22,
+      "rca_min": 754,
+      "root_cause": "data_quality",
+      "alert_count": 10,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4264",
+      "title": "Intermittent errors under investigation",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-31T19:23:41.339Z",
+      "detect_min": 8,
+      "ack_min": 0,
+      "mitigate_min": 4,
+      "rca_min": 225,
+      "root_cause": "unknown",
+      "alert_count": 6,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4243",
+      "title": "Upstream provider degraded",
+      "service": "ledger-db",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-07-31T18:16:21.894Z",
+      "detect_min": 2,
+      "ack_min": 7,
+      "mitigate_min": 19,
+      "rca_min": 141,
+      "root_cause": "dependency",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4252",
+      "title": "Connection pool exhausted",
+      "service": "payments-gateway",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-31T16:36:38.978Z",
+      "detect_min": 7,
+      "ack_min": 0,
+      "mitigate_min": 3,
+      "rca_min": 157,
+      "root_cause": "capacity",
+      "alert_count": 4,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4226",
+      "title": "Feature flag misfire",
+      "service": "ledger-db",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-31T13:30:10.977Z",
+      "detect_min": 3,
+      "ack_min": 0,
+      "mitigate_min": 3,
+      "rca_min": 549,
+      "root_cause": "config_change",
+      "alert_count": 2,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4203",
+      "title": "Latency regression from rollout",
+      "service": "edge-cdn",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-07-31T06:51:17.704Z",
+      "detect_min": 7,
+      "ack_min": 0,
+      "mitigate_min": 4,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 3,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4247",
+      "title": "Load balancer flapping",
+      "service": "notification-worker",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-07-31T04:18:51.064Z",
+      "detect_min": 4,
+      "ack_min": 3,
+      "mitigate_min": 16,
+      "rca_min": 162,
+      "root_cause": "infra_failure",
+      "alert_count": 2,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4207",
+      "title": "Elevated 5xx after release",
+      "service": "checkout-api",
+      "severity": "SEV2",
+      "state": "rca_pending",
+      "started_at": "2026-07-31T00:10:19.338Z",
+      "detect_min": 5,
+      "ack_min": 2,
+      "mitigate_min": 42,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 7,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "A. Okafor",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4239",
+      "title": "Secret rotation broke auth",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-31T00:07:07.105Z",
+      "detect_min": 3,
+      "ack_min": 0,
+      "mitigate_min": 3,
+      "rca_min": 441,
+      "root_cause": "config_change",
+      "alert_count": 2,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4209",
+      "title": "Bad routing rule",
+      "service": "ledger-db",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-30T22:32:59.206Z",
+      "detect_min": 8,
+      "ack_min": 12,
+      "mitigate_min": 96,
+      "rca_min": 412,
+      "root_cause": "config_change",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4206",
+      "title": "Latency regression from rollout",
+      "service": "notification-worker",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-07-30T22:29:02.870Z",
+      "detect_min": 3,
+      "ack_min": 14,
+      "mitigate_min": 54,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 10,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4262",
+      "title": "Third-party timeout spike",
+      "service": "ledger-db",
+      "severity": "SEV2",
+      "state": "rca_pending",
+      "started_at": "2026-07-30T13:47:25.992Z",
+      "detect_min": 3,
+      "ack_min": 7,
+      "mitigate_min": 10,
+      "rca_min": null,
+      "root_cause": "dependency",
+      "alert_count": 9,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4220",
+      "title": "Disk pressure on primary",
+      "service": "media-transcode",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-30T00:53:01.930Z",
+      "detect_min": 5,
+      "ack_min": 8,
+      "mitigate_min": 76,
+      "rca_min": null,
+      "root_cause": "capacity",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4254",
+      "title": "Schema drift in ingest",
+      "service": "notification-worker",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-07-29T20:47:38.163Z",
+      "detect_min": 2,
+      "ack_min": 7,
+      "mitigate_min": 12,
+      "rca_min": 230,
+      "root_cause": "data_quality",
+      "alert_count": 14,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4222",
+      "title": "Secret rotation broke auth",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-29T17:48:21.576Z",
+      "detect_min": 9,
+      "ack_min": 6,
+      "mitigate_min": 50,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 4,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4250",
+      "title": "Queue backlog growing",
+      "service": "notification-worker",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-29T15:51:55.032Z",
+      "detect_min": 15,
+      "ack_min": 13,
+      "mitigate_min": 65,
+      "rca_min": 449,
+      "root_cause": "capacity",
+      "alert_count": 7,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4260",
+      "title": "Disk pressure on primary",
+      "service": "payments-gateway",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-07-29T12:25:50.960Z",
+      "detect_min": 3,
+      "ack_min": 0,
+      "mitigate_min": 19,
+      "rca_min": null,
+      "root_cause": "capacity",
+      "alert_count": 13,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4212",
+      "title": "Upstream provider degraded",
+      "service": "payments-gateway",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-29T10:51:17.476Z",
+      "detect_min": 16,
+      "ack_min": 0,
+      "mitigate_min": 12,
+      "rca_min": 864,
+      "root_cause": "dependency",
+      "alert_count": 12,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4268",
+      "title": "Disk pressure on primary",
+      "service": "search-index",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-29T10:05:45.062Z",
+      "detect_min": 7,
+      "ack_min": 6,
+      "mitigate_min": 24,
+      "rca_min": 484,
+      "root_cause": "capacity",
+      "alert_count": 13,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4237",
+      "title": "Latency regression from rollout",
+      "service": "edge-cdn",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-29T02:25:19.704Z",
+      "detect_min": 3,
+      "ack_min": 9,
+      "mitigate_min": 67,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 13,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4215",
+      "title": "Elevated 5xx after release",
+      "service": "media-transcode",
+      "severity": "SEV1",
+      "state": "rca_pending",
+      "started_at": "2026-07-28T20:00:33.381Z",
+      "detect_min": 2,
+      "ack_min": 2,
+      "mitigate_min": 30,
+      "rca_min": null,
+      "root_cause": "bad_deploy",
+      "alert_count": 22,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4225",
+      "title": "Schema drift in ingest",
+      "service": "media-transcode",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-28T18:18:02.722Z",
+      "detect_min": 3,
+      "ack_min": 8,
+      "mitigate_min": 65,
+      "rca_min": 263,
+      "root_cause": "data_quality",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4255",
+      "title": "Latency regression from rollout",
+      "service": "checkout-api",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-28T17:38:43.950Z",
+      "detect_min": 2,
+      "ack_min": 0,
+      "mitigate_min": 4,
+      "rca_min": 364,
+      "root_cause": "bad_deploy",
+      "alert_count": 2,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4240",
+      "title": "Load balancer flapping",
+      "service": "payments-gateway",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-28T17:18:50.289Z",
+      "detect_min": 2,
+      "ack_min": 0,
+      "mitigate_min": 12,
+      "rca_min": null,
+      "root_cause": "infra_failure",
+      "alert_count": 3,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4267",
+      "title": "Load balancer flapping",
+      "service": "payments-gateway",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-07-28T12:47:34.627Z",
+      "detect_min": 2,
+      "ack_min": 4,
+      "mitigate_min": 21,
+      "rca_min": 101,
+      "root_cause": "infra_failure",
+      "alert_count": 1,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": true,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4238",
+      "title": "Unexplained latency spike",
+      "service": "media-transcode",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-28T11:40:28.460Z",
+      "detect_min": 4,
+      "ack_min": 9,
+      "mitigate_min": 106,
+      "rca_min": 767,
+      "root_cause": "unknown",
+      "alert_count": 3,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "S. Baptiste",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4232",
+      "title": "Disk pressure on primary",
+      "service": "edge-cdn",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-28T09:55:26.346Z",
+      "detect_min": 4,
+      "ack_min": 0,
+      "mitigate_min": 4,
+      "rca_min": 210,
+      "root_cause": "capacity",
+      "alert_count": 1,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": false,
+      "postmortem": true
+    },
+    {
+      "id": "INC-4234",
+      "title": "Duplicate events downstream",
+      "service": "checkout-api",
+      "severity": "SEV4",
+      "state": "resolved",
+      "started_at": "2026-07-28T05:24:52.781Z",
+      "detect_min": 3,
+      "ack_min": 8,
+      "mitigate_min": 163,
+      "rca_min": 393,
+      "root_cause": "data_quality",
+      "alert_count": 12,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4251",
+      "title": "Disk pressure on primary",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-27T23:03:59.657Z",
+      "detect_min": 6,
+      "ack_min": 9,
+      "mitigate_min": 20,
+      "rca_min": null,
+      "root_cause": "capacity",
+      "alert_count": 8,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": false,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4259",
+      "title": "Crash loop after deploy",
+      "service": "edge-cdn",
+      "severity": "SEV3",
+      "state": "resolved",
+      "started_at": "2026-07-27T17:50:09.995Z",
+      "detect_min": 10,
+      "ack_min": 0,
+      "mitigate_min": 7,
+      "rca_min": 191,
+      "root_cause": "bad_deploy",
+      "alert_count": 6,
+      "auto_remediated": true,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4229",
+      "title": "Crash loop after deploy",
+      "service": "checkout-api",
+      "severity": "SEV1",
+      "state": "resolved",
+      "started_at": "2026-07-27T12:33:36.596Z",
+      "detect_min": 1,
+      "ack_min": 2,
+      "mitigate_min": 14,
+      "rca_min": 125,
+      "root_cause": "bad_deploy",
+      "alert_count": 12,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "R. Nakamura",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4269",
+      "title": "Bad routing rule",
+      "service": "notification-worker",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-27T12:14:52.815Z",
+      "detect_min": 10,
+      "ack_min": 5,
+      "mitigate_min": 19,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 14,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "M. Lindqvist",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4224",
+      "title": "Connection pool exhausted",
+      "service": "search-index",
+      "severity": "SEV2",
+      "state": "resolved",
+      "started_at": "2026-07-27T05:09:36.946Z",
+      "detect_min": 3,
+      "ack_min": 3,
+      "mitigate_min": 63,
+      "rca_min": 239,
+      "root_cause": "capacity",
+      "alert_count": 6,
+      "auto_remediated": false,
+      "escalated": true,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4244",
+      "title": "Bad routing rule",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-27T01:20:09.881Z",
+      "detect_min": 3,
+      "ack_min": 5,
+      "mitigate_min": 32,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 11,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "R. Nakamura",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4242",
+      "title": "Secret rotation broke auth",
+      "service": "auth-service",
+      "severity": "SEV3",
+      "state": "rca_pending",
+      "started_at": "2026-07-26T19:55:04.514Z",
+      "detect_min": 3,
+      "ack_min": 4,
+      "mitigate_min": 29,
+      "rca_min": null,
+      "root_cause": "config_change",
+      "alert_count": 6,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "T. Alvarez",
+      "repeat": true,
+      "postmortem": false
+    },
+    {
+      "id": "INC-4263",
+      "title": "Node pool eviction",
+      "service": "media-transcode",
+      "severity": "SEV4",
+      "state": "rca_pending",
+      "started_at": "2026-07-26T14:38:34.767Z",
+      "detect_min": 14,
+      "ack_min": 7,
+      "mitigate_min": 29,
+      "rca_min": null,
+      "root_cause": "infra_failure",
+      "alert_count": 7,
+      "auto_remediated": false,
+      "escalated": false,
+      "responder": "A. Okafor",
+      "repeat": true,
+      "postmortem": false
+    }
+  ],
+  "services": [
+    {
+      "service": "checkout-api",
+      "availability": 99.753,
+      "slo": 99.9,
+      "budget_burn": 2.47,
+      "p95_latency_ms": 175,
+      "error_rate_pct": 1.51,
+      "saturation_pct": 38,
+      "change_failure_pct": 29,
+      "incidents": 7
+    },
+    {
+      "service": "payments-gateway",
+      "availability": 99.958,
+      "slo": 99.95,
+      "budget_burn": 0.83,
+      "p95_latency_ms": 364,
+      "error_rate_pct": 0.86,
+      "saturation_pct": 48,
+      "change_failure_pct": 6,
+      "incidents": 9
+    },
+    {
+      "service": "auth-service",
+      "availability": 100,
+      "slo": 99.9,
+      "budget_burn": 0,
+      "p95_latency_ms": 600,
+      "error_rate_pct": 1.23,
+      "saturation_pct": 60,
+      "change_failure_pct": 26,
+      "incidents": 10
+    },
+    {
+      "service": "search-index",
+      "availability": 99.683,
+      "slo": 99.9,
+      "budget_burn": 3.17,
+      "p95_latency_ms": 128,
+      "error_rate_pct": 0.4,
+      "saturation_pct": 79,
+      "change_failure_pct": 19,
+      "incidents": 8
+    },
+    {
+      "service": "notification-worker",
+      "availability": 99.897,
+      "slo": 99.9,
+      "budget_burn": 1.03,
+      "p95_latency_ms": 842,
+      "error_rate_pct": 0.4,
+      "saturation_pct": 63,
+      "change_failure_pct": 26,
+      "incidents": 10
+    },
+    {
+      "service": "media-transcode",
+      "availability": 99.734,
+      "slo": 99.9,
+      "budget_burn": 2.66,
+      "p95_latency_ms": 1010,
+      "error_rate_pct": 0.65,
+      "saturation_pct": 35,
+      "change_failure_pct": 6,
+      "incidents": 11
+    },
+    {
+      "service": "ledger-db",
+      "availability": 99.873,
+      "slo": 99.95,
+      "budget_burn": 2.54,
+      "p95_latency_ms": 245,
+      "error_rate_pct": 0.81,
+      "saturation_pct": 63,
+      "change_failure_pct": 16,
+      "incidents": 7
+    },
+    {
+      "service": "edge-cdn",
+      "availability": 99.901,
+      "slo": 99.9,
+      "budget_burn": 0.99,
+      "p95_latency_ms": 659,
+      "error_rate_pct": 1.03,
+      "saturation_pct": 37,
+      "change_failure_pct": 22,
+      "incidents": 8
+    }
+  ],
+  "sources": [
+    {
+      "id": "prom",
+      "name": "Prometheus",
+      "kind": "metrics",
+      "signals": 1170210,
+      "alerts": 768,
+      "noise": 465,
+      "healthy": true
+    },
+    {
+      "id": "loki",
+      "name": "Loki",
+      "kind": "logs",
+      "signals": 800473,
+      "alerts": 542,
+      "noise": 425,
+      "healthy": false
+    },
+    {
+      "id": "tempo",
+      "name": "Tempo",
+      "kind": "traces",
+      "signals": 190289,
+      "alerts": 181,
+      "noise": 130,
+      "healthy": true
+    },
+    {
+      "id": "synthetics",
+      "name": "Synthetics",
+      "kind": "synthetic",
+      "signals": 399493,
+      "alerts": 294,
+      "noise": 182,
+      "healthy": true
+    },
+    {
+      "id": "rum",
+      "name": "Browser RUM",
+      "kind": "rum",
+      "signals": 273135,
+      "alerts": 271,
+      "noise": 196,
+      "healthy": true
+    },
+    {
+      "id": "falco",
+      "name": "Runtime security",
+      "kind": "security",
+      "signals": 256263,
+      "alerts": 203,
+      "noise": 106,
+      "healthy": true
+    }
+  ],
+  "alert_series": [
+    {
+      "t": "2026-07-26T12:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T13:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T14:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T15:00:00.000Z",
+      "alerts": 9,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T16:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T17:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T18:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T19:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-26T20:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T21:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T22:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-26T23:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T00:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T01:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-27T02:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T03:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T04:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-27T05:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T06:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T07:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T08:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T09:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-27T10:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-27T11:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T12:00:00.000Z",
+      "alerts": 13,
+      "noise": 9,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-27T13:00:00.000Z",
+      "alerts": 19,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T14:00:00.000Z",
+      "alerts": 24,
+      "noise": 16,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T15:00:00.000Z",
+      "alerts": 15,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T16:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T17:00:00.000Z",
+      "alerts": 12,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T18:00:00.000Z",
+      "alerts": 12,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T19:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T20:00:00.000Z",
+      "alerts": 6,
+      "noise": 3,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-27T21:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T22:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-27T23:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T00:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T01:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T02:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T03:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T04:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T05:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T06:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T07:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-28T08:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T09:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T10:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T11:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T12:00:00.000Z",
+      "alerts": 14,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T13:00:00.000Z",
+      "alerts": 16,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T14:00:00.000Z",
+      "alerts": 13,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T15:00:00.000Z",
+      "alerts": 13,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T16:00:00.000Z",
+      "alerts": 22,
+      "noise": 12,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T17:00:00.000Z",
+      "alerts": 13,
+      "noise": 10,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T18:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-28T19:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T20:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T21:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-28T23:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T00:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T01:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T02:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T03:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T04:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T05:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T06:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T07:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T08:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T09:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T10:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-29T11:00:00.000Z",
+      "alerts": 13,
+      "noise": 10,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T12:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-29T13:00:00.000Z",
+      "alerts": 23,
+      "noise": 13,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-29T14:00:00.000Z",
+      "alerts": 11,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T15:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-29T16:00:00.000Z",
+      "alerts": 11,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T17:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T18:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T19:00:00.000Z",
+      "alerts": 11,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T20:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T21:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-29T23:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T00:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T01:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T02:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T03:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T04:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T05:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T06:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T07:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T08:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-30T09:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T10:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T11:00:00.000Z",
+      "alerts": 14,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T12:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T13:00:00.000Z",
+      "alerts": 20,
+      "noise": 15,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-30T14:00:00.000Z",
+      "alerts": 24,
+      "noise": 14,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-30T15:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T16:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-30T17:00:00.000Z",
+      "alerts": 12,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T18:00:00.000Z",
+      "alerts": 12,
+      "noise": 7,
+      "incidents": 2
+    },
+    {
+      "t": "2026-07-30T19:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T20:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T21:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T22:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-30T23:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T00:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T01:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T02:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T03:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T04:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T05:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T06:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T07:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T08:00:00.000Z",
+      "alerts": 9,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T09:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T10:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T11:00:00.000Z",
+      "alerts": 12,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T12:00:00.000Z",
+      "alerts": 14,
+      "noise": 10,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T13:00:00.000Z",
+      "alerts": 12,
+      "noise": 9,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T14:00:00.000Z",
+      "alerts": 15,
+      "noise": 10,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T15:00:00.000Z",
+      "alerts": 20,
+      "noise": 15,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T16:00:00.000Z",
+      "alerts": 17,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T17:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T18:00:00.000Z",
+      "alerts": 11,
+      "noise": 7,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T19:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T20:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 1
+    },
+    {
+      "t": "2026-07-31T21:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-07-31T23:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T00:00:00.000Z",
+      "alerts": 2,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T01:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-01T02:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T03:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T04:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T05:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T06:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T07:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T08:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T09:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T10:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T11:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T12:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T13:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T14:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T15:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T16:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T17:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T18:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T19:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T20:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T21:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-01T23:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T00:00:00.000Z",
+      "alerts": 2,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T01:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T02:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T03:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T04:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-02T05:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T06:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T07:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T08:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T09:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T10:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T11:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T12:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T13:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T14:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T15:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T16:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T17:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T18:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T19:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T20:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T21:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-02T23:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T00:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T01:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T02:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T03:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T04:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T05:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T06:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T07:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T08:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T09:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-03T10:00:00.000Z",
+      "alerts": 9,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T11:00:00.000Z",
+      "alerts": 13,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T12:00:00.000Z",
+      "alerts": 12,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T13:00:00.000Z",
+      "alerts": 12,
+      "noise": 8,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-03T14:00:00.000Z",
+      "alerts": 21,
+      "noise": 13,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T15:00:00.000Z",
+      "alerts": 15,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T16:00:00.000Z",
+      "alerts": 18,
+      "noise": 13,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-03T17:00:00.000Z",
+      "alerts": 6,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T18:00:00.000Z",
+      "alerts": 7,
+      "noise": 6,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-03T19:00:00.000Z",
+      "alerts": 11,
+      "noise": 8,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-03T20:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T21:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-03T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-03T23:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T00:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T01:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T02:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T03:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T04:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T05:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T06:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T07:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T08:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T09:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T10:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T11:00:00.000Z",
+      "alerts": 13,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T12:00:00.000Z",
+      "alerts": 11,
+      "noise": 8,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-04T13:00:00.000Z",
+      "alerts": 23,
+      "noise": 15,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T14:00:00.000Z",
+      "alerts": 11,
+      "noise": 9,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T15:00:00.000Z",
+      "alerts": 16,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T16:00:00.000Z",
+      "alerts": 21,
+      "noise": 16,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-04T17:00:00.000Z",
+      "alerts": 13,
+      "noise": 9,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-04T18:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-04T19:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T20:00:00.000Z",
+      "alerts": 9,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T21:00:00.000Z",
+      "alerts": 8,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-04T23:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T00:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T01:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T02:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T03:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T04:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T05:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-05T06:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T07:00:00.000Z",
+      "alerts": 8,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T08:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T09:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T10:00:00.000Z",
+      "alerts": 8,
+      "noise": 5,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-05T11:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-05T12:00:00.000Z",
+      "alerts": 11,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T13:00:00.000Z",
+      "alerts": 22,
+      "noise": 15,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T14:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T15:00:00.000Z",
+      "alerts": 21,
+      "noise": 13,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T16:00:00.000Z",
+      "alerts": 17,
+      "noise": 13,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-05T17:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T18:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T19:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-05T20:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T21:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T22:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-05T23:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T00:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T01:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T02:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-06T03:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T04:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T05:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-06T06:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T07:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T08:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T09:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T10:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T11:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T12:00:00.000Z",
+      "alerts": 10,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T13:00:00.000Z",
+      "alerts": 12,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T14:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T15:00:00.000Z",
+      "alerts": 13,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T16:00:00.000Z",
+      "alerts": 19,
+      "noise": 13,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T17:00:00.000Z",
+      "alerts": 14,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T18:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-06T19:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T20:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T21:00:00.000Z",
+      "alerts": 6,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T22:00:00.000Z",
+      "alerts": 7,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-06T23:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T00:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T01:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-07T02:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T03:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T04:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T05:00:00.000Z",
+      "alerts": 6,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T06:00:00.000Z",
+      "alerts": 7,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T07:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-07T08:00:00.000Z",
+      "alerts": 8,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T09:00:00.000Z",
+      "alerts": 11,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T10:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-07T11:00:00.000Z",
+      "alerts": 11,
+      "noise": 7,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T12:00:00.000Z",
+      "alerts": 13,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T13:00:00.000Z",
+      "alerts": 17,
+      "noise": 11,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T14:00:00.000Z",
+      "alerts": 15,
+      "noise": 11,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-07T15:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T16:00:00.000Z",
+      "alerts": 10,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T17:00:00.000Z",
+      "alerts": 10,
+      "noise": 8,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T18:00:00.000Z",
+      "alerts": 6,
+      "noise": 3,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-07T19:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T20:00:00.000Z",
+      "alerts": 9,
+      "noise": 5,
+      "incidents": 2
+    },
+    {
+      "t": "2026-08-07T21:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T22:00:00.000Z",
+      "alerts": 8,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-07T23:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-08T00:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T01:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T02:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T03:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T04:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T05:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T06:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T07:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T08:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T09:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T10:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T11:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T12:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T13:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T14:00:00.000Z",
+      "alerts": 9,
+      "noise": 5,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T15:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T16:00:00.000Z",
+      "alerts": 9,
+      "noise": 6,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T17:00:00.000Z",
+      "alerts": 4,
+      "noise": 3,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T18:00:00.000Z",
+      "alerts": 5,
+      "noise": 4,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T19:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T20:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T21:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 1
+    },
+    {
+      "t": "2026-08-08T22:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-08T23:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T00:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T01:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T02:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T03:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T04:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T05:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T06:00:00.000Z",
+      "alerts": 1,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T07:00:00.000Z",
+      "alerts": 4,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T08:00:00.000Z",
+      "alerts": 2,
+      "noise": 1,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T09:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T10:00:00.000Z",
+      "alerts": 3,
+      "noise": 2,
+      "incidents": 0
+    },
+    {
+      "t": "2026-08-09T11:00:00.000Z",
+      "alerts": 5,
+      "noise": 3,
+      "incidents": 0
+    }
+  ],
+  "cause_mix": [
+    {
+      "cause": "Bad deploy",
+      "count": 15
+    },
+    {
+      "cause": "Config change",
+      "count": 14
+    },
+    {
+      "cause": "Capacity",
+      "count": 12
+    },
+    {
+      "cause": "Dependency",
+      "count": 11
+    },
+    {
+      "cause": "Infra failure",
+      "count": 7
+    },
+    {
+      "cause": "Data quality",
+      "count": 6
+    },
+    {
+      "cause": "Not yet known",
+      "count": 5
+    }
+  ],
+  "severity_mix": [
+    {
+      "severity": "SEV1",
+      "count": 5,
+      "mttr": 23,
+      "p90": 30
+    },
+    {
+      "severity": "SEV2",
+      "count": 14,
+      "mttr": 28,
+      "p90": 64
+    },
+    {
+      "severity": "SEV3",
+      "count": 28,
+      "mttr": 35,
+      "p90": 74
+    },
+    {
+      "severity": "SEV4",
+      "count": 23,
+      "mttr": 76,
+      "p90": 129
+    }
+  ],
+  "incident_heat": [
+    {
+      "day": "Sun",
+      "hour": 0,
+      "count": 0
+    },
+    {
+      "day": "Sun",
+      "hour": 3,
+      "count": 1
+    },
+    {
+      "day": "Sun",
+      "hour": 6,
+      "count": 1
+    },
+    {
+      "day": "Sun",
+      "hour": 9,
+      "count": 2
+    },
+    {
+      "day": "Sun",
+      "hour": 12,
+      "count": 1
+    },
+    {
+      "day": "Sun",
+      "hour": 15,
+      "count": 0
+    },
+    {
+      "day": "Sun",
+      "hour": 18,
+      "count": 1
+    },
+    {
+      "day": "Sun",
+      "hour": 21,
+      "count": 0
+    },
+    {
+      "day": "Mon",
+      "hour": 0,
+      "count": 1
+    },
+    {
+      "day": "Mon",
+      "hour": 3,
+      "count": 1
+    },
+    {
+      "day": "Mon",
+      "hour": 6,
+      "count": 1
+    },
+    {
+      "day": "Mon",
+      "hour": 9,
+      "count": 0
+    },
+    {
+      "day": "Mon",
+      "hour": 12,
+      "count": 3
+    },
+    {
+      "day": "Mon",
+      "hour": 15,
+      "count": 2
+    },
+    {
+      "day": "Mon",
+      "hour": 18,
+      "count": 2
+    },
+    {
+      "day": "Mon",
+      "hour": 21,
+      "count": 2
+    },
+    {
+      "day": "Tue",
+      "hour": 0,
+      "count": 0
+    },
+    {
+      "day": "Tue",
+      "hour": 3,
+      "count": 3
+    },
+    {
+      "day": "Tue",
+      "hour": 6,
+      "count": 0
+    },
+    {
+      "day": "Tue",
+      "hour": 9,
+      "count": 2
+    },
+    {
+      "day": "Tue",
+      "hour": 12,
+      "count": 1
+    },
+    {
+      "day": "Tue",
+      "hour": 15,
+      "count": 4
+    },
+    {
+      "day": "Tue",
+      "hour": 18,
+      "count": 2
+    },
+    {
+      "day": "Tue",
+      "hour": 21,
+      "count": 3
+    },
+    {
+      "day": "Wed",
+      "hour": 0,
+      "count": 1
+    },
+    {
+      "day": "Wed",
+      "hour": 3,
+      "count": 1
+    },
+    {
+      "day": "Wed",
+      "hour": 6,
+      "count": 0
+    },
+    {
+      "day": "Wed",
+      "hour": 9,
+      "count": 3
+    },
+    {
+      "day": "Wed",
+      "hour": 12,
+      "count": 1
+    },
+    {
+      "day": "Wed",
+      "hour": 15,
+      "count": 2
+    },
+    {
+      "day": "Wed",
+      "hour": 18,
+      "count": 2
+    },
+    {
+      "day": "Wed",
+      "hour": 21,
+      "count": 2
+    },
+    {
+      "day": "Thu",
+      "hour": 0,
+      "count": 1
+    },
+    {
+      "day": "Thu",
+      "hour": 3,
+      "count": 1
+    },
+    {
+      "day": "Thu",
+      "hour": 6,
+      "count": 1
+    },
+    {
+      "day": "Thu",
+      "hour": 9,
+      "count": 0
+    },
+    {
+      "day": "Thu",
+      "hour": 12,
+      "count": 1
+    },
+    {
+      "day": "Thu",
+      "hour": 15,
+      "count": 0
+    },
+    {
+      "day": "Thu",
+      "hour": 18,
+      "count": 0
+    },
+    {
+      "day": "Thu",
+      "hour": 21,
+      "count": 3
+    },
+    {
+      "day": "Fri",
+      "hour": 0,
+      "count": 3
+    },
+    {
+      "day": "Fri",
+      "hour": 3,
+      "count": 1
+    },
+    {
+      "day": "Fri",
+      "hour": 6,
+      "count": 2
+    },
+    {
+      "day": "Fri",
+      "hour": 9,
+      "count": 0
+    },
+    {
+      "day": "Fri",
+      "hour": 12,
+      "count": 1
+    },
+    {
+      "day": "Fri",
+      "hour": 15,
+      "count": 1
+    },
+    {
+      "day": "Fri",
+      "hour": 18,
+      "count": 3
+    },
+    {
+      "day": "Fri",
+      "hour": 21,
+      "count": 0
+    },
+    {
+      "day": "Sat",
+      "hour": 0,
+      "count": 0
+    },
+    {
+      "day": "Sat",
+      "hour": 3,
+      "count": 0
+    },
+    {
+      "day": "Sat",
+      "hour": 6,
+      "count": 1
+    },
+    {
+      "day": "Sat",
+      "hour": 9,
+      "count": 1
+    },
+    {
+      "day": "Sat",
+      "hour": 12,
+      "count": 2
+    },
+    {
+      "day": "Sat",
+      "hour": 15,
+      "count": 0
+    },
+    {
+      "day": "Sat",
+      "hour": 18,
+      "count": 1
+    },
+    {
+      "day": "Sat",
+      "hour": 21,
+      "count": 2
+    }
+  ]
+}

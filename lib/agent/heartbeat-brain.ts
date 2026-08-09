@@ -12,11 +12,14 @@
  * re-litigating yesterday is worse than one that says nothing.
  */
 
-import { split } from "./salience";
+import { splitInContext } from "./salience";
 import { parseDecision, PROACTIVE_SYSTEM, type ProactiveDecision } from "./proactive";
+import { abstractLongTerm, recalledEpisodes, runMemoryProtocols, type MemoryAbstraction, type MemoryView } from "./memory";
+import { signatureForEvent, type MemoryTrace } from "./memory/traces";
 import type { SreEvent } from "./events";
 import {
   eventsForBeat,
+  readEvents,
   readHeartbeatState,
   withBeatLock,
   writeHeartbeatState,
@@ -26,6 +29,11 @@ import { fenceWithNotice } from "./untrusted-content";
 import type { MockMessage } from "@/lib/mock/fixtures";
 
 const REASONING_MODEL = "claude-sonnet-5";
+const MEMORY_ABSTRACTION_SYSTEM = [
+  "You maintain an SRE's long-term memory.",
+  "Given recurring, cited incident episodes, write one durable fact or procedure only if the pattern is supported.",
+  "Never invent a source event id. Reply with JSON only: {\"kind\": \"fact\"|\"procedure\", \"headline\": \"...\", \"summary\": \"...\", \"sourceEventIds\": [\"...\"]}.",
+].join("\n");
 
 export interface BeatResult {
   considered: number;
@@ -44,7 +52,7 @@ export interface BeatResult {
  * message the brain writes can cite one — a claim the user cannot check is the
  * thing the whole product is trying not to be.
  */
-export function buildBriefing(events: readonly SreEvent[]): string {
+export function buildBriefing(events: readonly SreEvent[], memory?: MemoryView): string {
   const lines = events.map((event) => {
     const parts = [`- [${event.severity}] ${event.source}: ${event.headline}`];
     if (event.summary) parts.push(`  ${event.summary}`);
@@ -62,11 +70,27 @@ export function buildBriefing(events: readonly SreEvent[]): string {
     return parts.join("\n");
   });
 
+  const standing = memory?.working.slice(0, 7).map((trace) => {
+    const kind = trace.kind === "hypothesis" ? "Hypothesis" : "Open";
+    return `${kind}: ${trace.incidentId ?? "unassigned"} — ${trace.headline ?? trace.summary ?? "no detail"} (${Math.round(trace.strength * 100)}%).`;
+  }) ?? [];
+  const recalled = memory
+    ? [...new Map(events.flatMap((event) => recalledEpisodes(memory, signatureForEvent(event))).map((episode) => [episode.id, episode])).values()]
+        .slice(0, 3)
+        .map((episode) => `${episode.openedAt?.slice(0, 10) ?? "past"} — ${episode.headline ?? "incident"}${episode.summary ? `; ${episode.summary}` : ""}${episode.ttrMs !== undefined ? `; recovered in ${Math.round(episode.ttrMs / 60_000)}m` : ""}.`)
+    : [];
+
   return [
-    "You just woke on your periodic check. Since you last spoke to the user, your",
-    "SRE engineer reported the following:",
+    "[STANDING CONTEXT — what you already know]",
+    ...(standing.length ? standing : ["No open memory traces."]),
     "",
-    ...lines,
+    "[RECALLED — relevant past episodes]",
+    ...(recalled.length ? recalled : ["No matching past episode."]),
+    "",
+    "[NEW SINCE LAST BEAT]",
+    // Only the SRE agent's newly supplied content is untrusted. The standing
+    // and recalled sections are our own derived, receipt-backed state.
+    fenceWithNotice(lines.join("\n"), "third-party content"),
     "",
     "Decide whether any of this is worth a message right now. If you speak, cite the",
     "evidence ref or the event so they can check it themselves.",
@@ -107,9 +131,7 @@ export async function askProactiveBrain(briefing: string): Promise<ProactiveDeci
         model: REASONING_MODEL,
         max_tokens: 400,
         system: PROACTIVE_SYSTEM,
-        // The briefing is built from what another agent sent us, so it is
-        // fenced like any other content this one did not write.
-        messages: [{ role: "user", content: fenceWithNotice(briefing, "third-party content") }],
+        messages: [{ role: "user", content: briefing }],
       }),
     });
     if (!response.ok) return { speak: false, message: "" };
@@ -122,6 +144,32 @@ export async function askProactiveBrain(briefing: string): Promise<ProactiveDeci
     return parseDecision(text);
   } catch {
     return { speak: false, message: "" };
+  }
+}
+
+/** One additional model call at most per hour, and only after a repeat pattern exists. */
+async function abstractMemory(episodes: readonly MemoryTrace[]): Promise<MemoryAbstraction | null> {
+  const headers = apiHeaders();
+  if (!headers) return null;
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: REASONING_MODEL,
+        max_tokens: 300,
+        system: MEMORY_ABSTRACTION_SYSTEM,
+        messages: [{ role: "user", content: fenceWithNotice(JSON.stringify(episodes), "third-party content") }],
+      }),
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as { content?: Array<{ type?: string; text?: string }> };
+    const text = (payload.content ?? []).find((block) => block.type === "text")?.text ?? "";
+    const value = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, "")) as Partial<MemoryAbstraction>;
+    if ((value.kind !== "fact" && value.kind !== "procedure") || typeof value.headline !== "string" || typeof value.summary !== "string" || !Array.isArray(value.sourceEventIds) || !value.sourceEventIds.every((id) => typeof id === "string")) return null;
+    return value as MemoryAbstraction;
+  } catch {
+    return null;
   }
 }
 
@@ -143,7 +191,10 @@ export function runHeartbeat(): Promise<BeatResult> {
       return { considered: 0, mattered: 0, spoke: false, silentBecause: "nothing new" };
     }
 
-    const { mattering } = split(considered);
+    // Memory protocol failures are observable in memory-state, but must not
+    // prevent the heartbeat from advancing its cursor or deciding to speak.
+    const memory = await runMemoryProtocols(await readEvents(), considered).catch(() => undefined);
+    const { mattering } = splitInContext(considered, memory ?? { working: [], episodes: [], longTerm: [] });
 
     // The cursor moves over everything considered, whatever happens next — and
     // it moves **before** the model call, not after.
@@ -157,7 +208,7 @@ export function runHeartbeat(): Promise<BeatResult> {
     // silence is a verdict, so a batch is spent once it has been asked about,
     // whatever the answer turns out to be.
     await writeHeartbeatState({
-      lastSeen: considered.at(-1)?.at ?? state.lastSeen,
+      lastSeen: considered.at(-1)?.receivedAt ?? state.lastSeen,
       announced: [...state.announced, ...considered.map((event) => event.id)],
     });
 
@@ -170,7 +221,10 @@ export function runHeartbeat(): Promise<BeatResult> {
       };
     }
 
-    const decision = await askProactiveBrain(buildBriefing(mattering));
+    const decision = await askProactiveBrain(buildBriefing(mattering, memory));
+    // A bad abstraction must never make an otherwise valid proactive decision
+    // disappear. Its own protocol state records the failure for the debug API.
+    await abstractLongTerm(abstractMemory).catch(() => undefined);
 
     if (!decision.speak || !decision.message) {
       return {

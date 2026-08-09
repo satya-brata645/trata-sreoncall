@@ -1,0 +1,368 @@
+[
+  {
+    "case": "valid spec",
+    "ok": true,
+    "issues": [],
+    "formatted": "No issues."
+  },
+  {
+    "case": "schema violation",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "$schema",
+        "message": "Invalid input: expected \"disco/v1\"",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      },
+      {
+        "level": "error",
+        "where": "id",
+        "message": "Invalid input: expected string, received undefined",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      },
+      {
+        "level": "error",
+        "where": "title",
+        "message": "Invalid input: expected string, received undefined",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      },
+      {
+        "level": "error",
+        "where": "intent",
+        "message": "Invalid input: expected string, received undefined",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      },
+      {
+        "level": "error",
+        "where": "dataset",
+        "message": "Invalid input: expected object, received undefined",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      },
+      {
+        "level": "error",
+        "where": "blocks",
+        "message": "Too small: expected array to have >=1 items",
+        "fix": "Fix the spec to match disco/v1 and re-emit."
+      }
+    ],
+    "formatted": "ERROR  [$schema] Invalid input: expected \"disco/v1\"\n         fix: Fix the spec to match disco/v1 and re-emit.\nERROR  [id] Invalid input: expected string, received undefined\n         fix: Fix the spec to match disco/v1 and re-emit.\nERROR  [title] Invalid input: expected string, received undefined\n         fix: Fix the spec to match disco/v1 and re-emit.\nERROR  [intent] Invalid input: expected string, received undefined\n         fix: Fix the spec to match disco/v1 and re-emit.\nERROR  [dataset] Invalid input: expected object, received undefined\n         fix: Fix the spec to match disco/v1 and re-emit.\nERROR  [blocks] Too small: expected array to have >=1 items\n         fix: Fix the spec to match disco/v1 and re-emit."
+  },
+  {
+    "case": "duplicate derivation id",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "d",
+        "message": "Duplicate derivation id \"d\".",
+        "fix": "Give every derivation a unique id."
+      }
+    ],
+    "formatted": "ERROR  [d] Duplicate derivation id \"d\".\n         fix: Give every derivation a unique id."
+  },
+  {
+    "case": "block id collides with derivation",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Block id \"k1\" collides with another id."
+      }
+    ],
+    "formatted": "ERROR  [k1] Block id \"k1\" collides with another id."
+  },
+  {
+    "case": "unknown frame",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Block binds to unknown frame \"nope\".",
+        "fix": "Bind to one of: raw."
+      }
+    ],
+    "formatted": "ERROR  [k1] Block binds to unknown frame \"nope\".\n         fix: Bind to one of: raw."
+  },
+  {
+    "case": "unknown spark frame",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Block binds to unknown frame \"missing\".",
+        "fix": "Bind to one of: raw."
+      }
+    ],
+    "formatted": "ERROR  [k1] Block binds to unknown frame \"missing\".\n         fix: Bind to one of: raw."
+  },
+  {
+    "case": "broken derivation graph",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "$",
+        "message": "Derivation pipeline failed: Unresolvable derivations: a(from=b), b(from=a). Known frames: raw",
+        "fix": "Check each derivation's `from` forms a DAG rooted at a base table."
+      }
+    ],
+    "formatted": "ERROR  [$] Derivation pipeline failed: Unresolvable derivations: a(from=b), b(from=a). Known frames: raw\n         fix: Check each derivation's `from` forms a DAG rooted at a base table."
+  },
+  {
+    "case": "empty frame",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Frame \"raw\" is empty, so this block would render blank.",
+        "fix": "Loosen the filter, or drop the block."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [k1] Frame \"raw\" is empty, so this block would render blank.\n         fix: Loosen the filter, or drop the block.\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "missing field",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Field \"nope\" does not exist in frame \"raw\".",
+        "fix": "Available: ts, region, plan, amount, pct, dur."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [k1] Field \"nope\" does not exist in frame \"raw\".\n         fix: Available: ts, region, plan, amount, pct, dur.\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "pie too many categories",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "p",
+        "message": "Donut has 9 slices; above 6 the angles are unreadable.",
+        "fix": "Use a bar block, or add a topK derivation first."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [p] Donut has 9 slices; above 6 the angles are unreadable.\n         fix: Use a bar block, or add a topK derivation first.\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "pie with negatives",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "p",
+        "message": "\"amount\" contains negative values, which cannot be a share of a whole.",
+        "fix": "Use a bar block instead."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [p] \"amount\" contains negative values, which cannot be a share of a whole.\n         fix: Use a bar block instead.\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "bar too many categories",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "b",
+        "message": "Bar chart has 30 categories; above 25 it reads as a barcode.",
+        "fix": "Add { op: \"topK\", k: 12, other: true } before this block."
+      }
+    ],
+    "formatted": "ERROR  [b] Bar chart has 30 categories; above 25 it reads as a barcode.\n         fix: Add { op: \"topK\", k: 12, other: true } before this block."
+  },
+  {
+    "case": "timeseries too many points",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "ts",
+        "message": "600 points on one line exceeds the 500-point budget.",
+        "fix": "Add { op: \"downsample\", points: 500 } or bucket to a coarser unit."
+      }
+    ],
+    "formatted": "ERROR  [ts] 600 points on one line exceeds the 500-point budget.\n         fix: Add { op: \"downsample\", points: 500 } or bucket to a coarser unit."
+  },
+  {
+    "case": "timeseries stacked single series",
+    "ok": true,
+    "issues": [
+      {
+        "level": "warning",
+        "where": "ts",
+        "message": "Stacking a single series has no effect.",
+        "fix": "Set stack: false."
+      }
+    ],
+    "formatted": "warn   [ts] Stacking a single series has no effect.\n         fix: Set stack: false."
+  },
+  {
+    "case": "timeseries log scale over zero",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "ts",
+        "message": "Log scale with zero or negative values leaves gaps that read as missing data.",
+        "fix": "Use a linear scale."
+      }
+    ],
+    "formatted": "ERROR  [ts] Log scale with zero or negative values leaves gaps that read as missing data.\n         fix: Use a linear scale."
+  },
+  {
+    "case": "table needs virtualization",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "tb",
+        "message": "Table renders 400 rows without virtualization.",
+        "fix": "Set virtualize: true."
+      }
+    ],
+    "formatted": "ERROR  [tb] Table renders 400 rows without virtualization.\n         fix: Set virtualize: true."
+  },
+  {
+    "case": "scatter overplot",
+    "ok": true,
+    "issues": [
+      {
+        "level": "warning",
+        "where": "sc",
+        "message": "6000 points will overplot into a solid mass.",
+        "fix": "Sample, bin into a heatmap, or aggregate first."
+      }
+    ],
+    "formatted": "warn   [sc] 6000 points will overplot into a solid mass.\n         fix: Sample, bin into a heatmap, or aggregate first."
+  },
+  {
+    "case": "kpi sums a running total",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "Field \"running\" does not exist in frame \"raw\".",
+        "fix": "Available: ts, region, plan, amount, pct, dur."
+      },
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "\"running\" is monotonic — a running total. Summing it double-counts.",
+        "fix": "Use agg: \"last\"."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [k1] Field \"running\" does not exist in frame \"raw\".\n         fix: Available: ts, region, plan, amount, pct, dur.\nERROR  [k1] \"running\" is monotonic — a running total. Summing it double-counts.\n         fix: Use agg: \"last\".\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "kpi sums a percentage",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "\"pct\" is a percentage; summing percentages is meaningless.",
+        "fix": "Use agg: \"avg\"."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [k1] \"pct\" is a percentage; summing percentages is meaningless.\n         fix: Use agg: \"avg\".\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "kpi sums a duration",
+    "ok": false,
+    "issues": [
+      {
+        "level": "error",
+        "where": "k1",
+        "message": "\"dur\" is a duration; a total of all latencies is not a number anyone acts on.",
+        "fix": "Use agg: \"p95\" or \"avg\"."
+      },
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "ERROR  [k1] \"dur\" is a duration; a total of all latencies is not a number anyone acts on.\n         fix: Use agg: \"p95\" or \"avg\".\nwarn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "too sparse",
+    "ok": true,
+    "issues": [
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      }
+    ],
+    "formatted": "warn   [$] The dashboard is very sparse; it may look unfinished."
+  },
+  {
+    "case": "too many kpis",
+    "ok": true,
+    "issues": [
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "More than six KPI tiles competes for attention.",
+        "fix": "Keep the headline row to four."
+      }
+    ],
+    "formatted": "warn   [$] More than six KPI tiles competes for attention.\n         fix: Keep the headline row to four."
+  },
+  {
+    "case": "client mode too many rows",
+    "ok": false,
+    "issues": [
+      {
+        "level": "warning",
+        "where": "$",
+        "message": "The dashboard is very sparse; it may look unfinished."
+      },
+      {
+        "level": "error",
+        "where": "$",
+        "message": "Client mode ships 40000 rows to the browser, above the 25000 limit.",
+        "fix": "Set mode: \"server\"."
+      }
+    ],
+    "formatted": "warn   [$] The dashboard is very sparse; it may look unfinished.\nERROR  [$] Client mode ships 40000 rows to the browser, above the 25000 limit.\n         fix: Set mode: \"server\"."
+  }
+]
