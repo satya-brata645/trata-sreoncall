@@ -306,6 +306,19 @@ export interface MockMessage {
   /** Unread agent messages carry the worst severity behind them. */
   severity?: "critical" | "high" | "medium" | "low";
   read?: boolean;
+  /** The wake-up this proactive message came from, when one did. */
+  sessionId?: string;
+  /** Which app it came from, for filtering and dedupe. */
+  projectId?: string;
+  /** How it arrived in chat. */
+  source?: "heartbeat" | "manual";
+  /**
+   * The SRE event behind a proactive message.
+   *
+   * Lives on the message rather than being looked up, so a claim carries its
+   * citation even when the event log is unreachable — the receipt is the point.
+   */
+  eventRef?: string;
 }
 
 export interface MockThread {
@@ -329,6 +342,9 @@ export const THREADS: MockThread[] = [
         at: ago(11 * MINUTE),
         severity: "critical",
         read: false,
+        sessionId: "wake-kode-004",
+        projectId: "kodeshield",
+        source: "heartbeat",
         text:
           "CVE-2026-1187 in api-gateway is reachable without authentication. I have a fix PR open (#482) and I have put a change freeze on the service until it merges. Nothing else in the estate is on that path.",
       },
@@ -345,6 +361,9 @@ export const THREADS: MockThread[] = [
         at: ago(2 * HOUR),
         severity: "high",
         read: false,
+        sessionId: "wake-dpflo-011",
+        projectId: "dpflo",
+        source: "heartbeat",
         text:
           "billing-svc started writing its nightly export to a us-east-1 bucket. That is a cross-border transfer with no mechanism recorded — the only one in the estate. Want me to draft the SCC, or should it move back to eu-west?",
       },
@@ -353,6 +372,9 @@ export const THREADS: MockThread[] = [
         role: "agent",
         at: ago(3 * DAY),
         read: true,
+        sessionId: "wake-audit-007",
+        projectId: "auditiseasy",
+        source: "heartbeat",
         text:
           "SOC 2 CC6 is fully evidenced for the first time this quarter. Two controls that were carrying manual attestations now generate their evidence instead.",
       },

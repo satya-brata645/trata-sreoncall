@@ -13,6 +13,8 @@ import {
   serializeSnapshot,
   terminatesBatch,
   verbsForMode,
+  OS_AGENT_MODES,
+  VERB_TABLE,
   type DesktopSnapshot,
   type WindowView,
 } from "../agentProtocol";
@@ -50,15 +52,23 @@ function snapshot(windows: WindowView[]): DesktopSnapshot {
 // ---------------------------------------------------------------------------
 
 test("clampMode: a request above the ceiling is clamped to it", () => {
-  assert.equal(clampMode("auto", "collab"), "collab");
   assert.equal(clampMode("collab", "self"), "self");
-  assert.equal(clampMode("auto", "self"), "self");
 });
 
 test("clampMode: a request at or below the ceiling is honoured", () => {
-  assert.equal(clampMode("collab", "auto"), "collab");
-  assert.equal(clampMode("self", "auto"), "self");
-  assert.equal(clampMode("auto", "auto"), "auto");
+  assert.equal(clampMode("collab", "collab"), "collab");
+  assert.equal(clampMode("self", "collab"), "self");
+  assert.equal(clampMode("self", "self"), "self");
+});
+
+test("the mode set is exactly self and collab", () => {
+  // Guards the removal of `auto`. A third mode reappearing without the verb
+  // table gaining a column for it would silently read as `undefined` at every
+  // permission check — which compares as neither "allow" nor "deny".
+  assert.deepEqual([...OS_AGENT_MODES], ["self", "collab"]);
+  for (const spec of Object.values(VERB_TABLE)) {
+    assert.deepEqual(Object.keys(spec.permissions).sort(), ["collab", "self"]);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -99,16 +109,13 @@ test("permissionFor: collab arranges windows freely and asks only to reach insid
   assert.equal(permissionFor("set_affordance", "collab"), "ask");
 });
 
-test("permissionFor: auto asks for nothing", () => {
-  for (const verb of verbsForMode("auto")) {
-    assert.equal(permissionFor(verb, "auto"), "allow", `${verb} should not ask in auto`);
-  }
+test("permissionFor: self offers nothing at all", () => {
+  assert.deepEqual(verbsForMode("self"), []);
 });
 
-test("permissionFor: full screen is denied in every mode, auto included", () => {
+test("permissionFor: full screen is denied in every mode", () => {
   assert.equal(permissionFor("full_screen", "self"), "deny");
   assert.equal(permissionFor("full_screen", "collab"), "deny");
-  assert.equal(permissionFor("full_screen", "auto"), "deny");
 });
 
 test("terminatesBatch: exactly the verbs that change which windows exist", () => {

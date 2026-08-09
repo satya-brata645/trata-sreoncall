@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test lib/os/__tests__/*.test.ts"
+    "test": "node --import tsx --test lib/os/__tests__/*.test.ts lib/agent/__tests__/*.test.ts lib/voice/__tests__/*.test.ts lib/store/__tests__/*.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

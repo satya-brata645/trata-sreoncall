@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { Check, type LucideIcon } from "lucide-react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 // Imported from the concrete files rather than the `@/components/ui` barrel:
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { OS_DOCK_Z } from "@/lib/os/constants";
+import type { AppArtworkProps } from "@/components/os/icons/AppArtwork";
 
 /** One of this app's open windows, as listed in the dock menu. */
 export interface DockMenuWindow {
@@ -88,18 +89,26 @@ function MenuRow({
 
 export interface DockItemProps {
   title: string;
+  /**
+   * The app's stroke symbol. Only drawn when the app has no `artwork` yet — a
+   * new registry entry is reachable from the dock before anyone has drawn it
+   * an icon.
+   */
   icon: LucideIcon;
+  /**
+   * The app's icon: a drawn, coloured tile that fills the launcher.
+   *
+   * The dock is the one place in this system where every app is a *thing you
+   * point at* rather than a thing being described, which is why colour lives
+   * here and nowhere inside a window. It is also the whole reason the tiles are
+   * legible at a glance: five identical grey squares differing only by a stroke
+   * glyph are five things you have to read.
+   */
+  artwork?: ComponentType<AppArtworkProps>;
   /** True when the app has at least one open window. */
   isOpen: boolean;
   onSelect: () => void;
-  /**
-   * The app's own hue, applied to the glyph's stroke and nothing else.
-   *
-   * Omitted for the OS's own apps, which stay monochrome — the same distinction
-   * macOS draws between Terminal and the colourful third-party icons beside it.
-   * Supplied for security apps, so the dock matches the Launchpad tile for the
-   * same app.
-   */
+  /** The app's hue, for the stroke fallback. Ignored when `artwork` is set. */
   tint?: string;
   /** Right-click menu for this tile. Omitted → no context menu at all. */
   menu?: DockItemMenu;
@@ -117,6 +126,7 @@ export interface DockItemProps {
 export function DockItem({
   title,
   icon: Icon,
+  artwork: Artwork,
   isOpen,
   onSelect,
   menu,
@@ -164,23 +174,41 @@ export function DockItem({
                   // A 44px rounded square at the dock radius, so the tiles read
                   // as app icons sitting on the frosted rail rather than as bare
                   // buttons cut into it.
-                  "size-11 rounded-lg border",
+                  "size-11 rounded-[11px]",
                   // Magnification, kept gentle. `origin-left` grows the tile
                   // away from the screen edge instead of pushing it off-screen,
                   // and a transform-only transition keeps it cheap — no layout
                   // work, so neighbours don't shift as it grows.
-                  "origin-left transition-all duration-150 ease-out",
-                  "hover:scale-[1.07] active:scale-100",
-                  "hover:bg-role-surface-component-selected",
-                  // Same surface and border as the OS's own tiles either way:
-                  // only the glyph carries the app's hue, so the dock still
-                  // reads as one object rather than a row of coloured chips.
-                  "border-role-border-subtle bg-role-surface-component-subtle",
-                  !tint && "text-role-icon",
+                  "origin-left transition-transform duration-150 ease-out",
+                  "hover:scale-[1.09] active:scale-[1.01]",
+                  Artwork
+                    ? cn(
+                        // The icon *is* the tile. No padding, no button surface
+                        // and no hover fill behind it: a chip drawn around a
+                        // drawn icon is the thing that makes a web dock look
+                        // like a toolbar. `size-full` beats IconButton's own
+                        // `[&_svg]:size-5`, which would shrink the art to a
+                        // glyph.
+                        "p-0 [&_svg]:size-full",
+                        "bg-transparent hover:bg-transparent",
+                        // Contact shadow — what separates a tile from the frost
+                        // it sits on, and the only thing making the icons read
+                        // as objects on the rail rather than printed into it.
+                        "drop-shadow-[0_2px_5px_rgba(0,0,0,0.45)]",
+                      )
+                    : cn(
+                        "border border-role-border-subtle bg-role-surface-component-subtle",
+                        "hover:bg-role-surface-component-selected",
+                        !tint && "text-role-icon",
+                      ),
                 )}
-                style={tint ? { color: tint } : undefined}
+                style={!Artwork && tint ? { color: tint } : undefined}
               >
-                <Icon size={17} strokeWidth={1.5} absoluteStrokeWidth />
+                {Artwork ? (
+                  <Artwork size={44} />
+                ) : (
+                  <Icon size={17} strokeWidth={1.5} absoluteStrokeWidth />
+                )}
               </IconButton>
               {/* Running indicator — the dock's only state, and white rather
               than violet: the accent means *the agent is working*, and a dock

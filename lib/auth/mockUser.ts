@@ -11,31 +11,10 @@
  * pinned.
  */
 
-export interface MockUser {
-  userId: string;
-  fullName: string;
-  email: string;
-  initials: string;
-}
+import { MOCK_ORG, MOCK_USER, type MockOrganization, type MockUser } from "./scope";
 
-export interface MockOrganization {
-  id: string;
-  slug: string;
-  name: string;
-}
-
-export const MOCK_USER: MockUser = {
-  userId: "user_trata_demo",
-  fullName: "Alex Mercer",
-  email: "alex@trata.dev",
-  initials: "AM",
-};
-
-export const MOCK_ORG: MockOrganization = {
-  id: "org_trata",
-  slug: "trata",
-  name: "Trata",
-};
+export { MOCK_ORG, MOCK_USER, scopeKey } from "./scope";
+export type { MockOrganization, MockUser } from "./scope";
 
 export function useAuth(): { userId: string | null; orgId: string | null; isLoaded: boolean } {
   return { userId: MOCK_USER.userId, orgId: MOCK_ORG.id, isLoaded: true };
@@ -47,9 +26,4 @@ export function useUser(): { user: MockUser; isLoaded: boolean } {
 
 export function useOrganization(): { organization: MockOrganization; isLoaded: boolean } {
   return { organization: MOCK_ORG, isLoaded: true };
-}
-
-/** The scope key every per-user store is namespaced by. */
-export function scopeKey(): string {
-  return MOCK_ORG.id || MOCK_USER.userId;
 }

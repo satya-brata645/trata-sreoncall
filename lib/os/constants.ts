@@ -31,9 +31,10 @@ export const OS_MENU_BAR_HEIGHT = 48;
 /**
  * Opening geometry.
  *
- * Windows open filling most of the desktop rather than at a fixed size: an app
- * you just launched is the thing you want to look at, and a small window on a
- * large display means an immediate resize before you can work.
+ * Windows open as large free-floating panes rather than effectively full
+ * screen. They should feel ready to use immediately, but still leave enough
+ * desktop visible that dragging, comparing and re-arranging windows is an
+ * obvious affordance rather than a hidden capability.
  *
  * `leftCells` clears the dock rail (its own inset plus its width); the other
  * margins are the breathing room that keeps the canvas grid visible around the
@@ -55,6 +56,12 @@ export const OS_WINDOW_CASCADE = {
   stepCells: 1,
   /** After this many steps the cascade wraps back to the origin. */
   maxSteps: 4,
+} as const;
+
+/** Target size of a newly opened free-floating window, as a share of work area. */
+export const OS_WINDOW_OPEN_SIZE = {
+  widthRatio: 0.72,
+  heightRatio: 0.78,
 } as const;
 
 /** Smallest a window may be, in px — below this the title bar stops being usable. */

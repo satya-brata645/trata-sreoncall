@@ -1,8 +1,8 @@
 "use client";
 
 import { ChromeLeading, ChromeTrailing, PanelSwitcher } from "@/components/os/apps/PanelSwitcher";
-import { Icon, StatusDot } from "@/components/ui/primitives";
-import { appGlyph } from "@/lib/os/appGlyphs";
+import { StatusDot } from "@/components/ui/primitives";
+import { AppIcon } from "@/components/os/icons/AppIcon";
 import { formatCompactRelativeTime } from "@/lib/utils";
 
 export type SecurityPanel = "overview" | "history" | "activity";
@@ -23,16 +23,11 @@ export function AppWindowChromeLeading({
   appId: string;
   appName: string;
 }) {
-  const glyph = appGlyph(appId);
-
   return (
     <ChromeLeading width={APP_SIDEBAR_WIDTH_PX}>
-      <span
-        style={{ color: glyph.tint }}
-        className="flex size-8 shrink-0 items-center justify-center rounded-xs bg-role-surface-component"
-      >
-        <Icon icon={glyph.icon} size={18} />
-      </span>
+      {/* The same icon the dock tile shows, so the window someone just opened is
+          visibly the thing they clicked. */}
+      <AppIcon appId={appId} name={appName} size={26} />
       <span className="truncate text-body-sm font-medium text-role-content-heading">
         {appName}
       </span>

@@ -34,7 +34,7 @@ test("the doctrine forbids full screen, matching the verb table", () => {
   const rule = STAGING_RULES.find((r) => r.id === "reading-is-fill");
   assert.ok(rule);
   assert.match(rule.rule, /Never use full screen/);
-  assert.equal(VERB_TABLE.full_screen.permissions.auto, "deny");
+  assert.equal(VERB_TABLE.full_screen.permissions.collab, "deny");
 });
 
 test("open-then-arrange matches what the batch guard does anyway", () => {
