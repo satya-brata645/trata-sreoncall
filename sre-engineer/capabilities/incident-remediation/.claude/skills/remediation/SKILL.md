@@ -176,6 +176,42 @@ survives, say so and write no playbook — the experience entry above already pr
 Candidates must be about *fix-proposal technique* specifically — not detection, grouping, root-causing, or reporting; those belong to other capabilities
 and you must never write there.
 
+### Tell the rest of the product what you learned
+
+A lesson that stays in this folder only ever helps this capability. The desktop agent — the
+one a person actually talks to — has no way to know you learned something unless you say so,
+which is why it used to keep making mistakes the SRE side had already learned to avoid.
+
+Whenever you write or revise a playbook, experience or baseline, or absorb a correction, POST
+a `learning` event:
+
+```bash
+curl -sS -m 5 -X POST "${{TRATA_BASE_URL:-http://localhost:3000}}/api/events" \
+  -H 'content-type: application/json' \
+  ${{SRE_INGEST_SECRET:+-H "x-internal-secret: $SRE_INGEST_SECRET"}} \
+  -d '{{
+    "source": "sre-engineer/{cap}",
+    "kind": "learning",
+    "severity": "info",
+    "headline": "<one line: what you now know that you did not before>",
+    "incidentId": "<the incident that taught it, if there was one>",
+    "learning": {{
+      "capability": "{cap}",
+      "artifact": "<repo-relative path to the file you just wrote>",
+      "artifactKind": "playbook|experience|baseline",
+      "origin": "self-authored|correction-absorbed|revised",
+      "lesson": "<what a future run would actually do differently>",
+      "correctionRef": "<required when origin is correction-absorbed>"
+    }}
+  }}' || true
+```
+
+**A failed POST must never sink the shift.** The artifact you wrote is already on disk and is
+the durable record; the event is how it reaches everything else. If the desktop isn't running
+or the call fails, note it plainly in your log line and carry on — losing a real lesson
+because a local server was down would help nobody. Same principle as remediation's PR
+fallback.
+
 ### Receipts — record what you actually used
 
 When you load and genuinely use a playbook or experience this shift, name it in your output and
