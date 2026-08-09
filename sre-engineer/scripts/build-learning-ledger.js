@@ -23,7 +23,13 @@ const ROOT = path.join(__dirname, "..");
 const REPO = path.join(ROOT, "..");
 const CAPABILITIES = path.join(ROOT, "capabilities");
 const CORRECTIONS = path.join(ROOT, "corrections");
-const APPLICATIONS = path.join(REPO, "agent", "src", "data", "applications.jsonl");
+// Two producers, two logs, both tracked: the Node detect/triage agent and the
+// Claude-Code capabilities. Merged here so a reader sees one history rather than
+// having to know the repo has two learning runtimes.
+const APPLICATION_LOGS = [
+  path.join(REPO, "agent", "applications.jsonl"),
+  path.join(ROOT, "applications.jsonl"),
+];
 const AGENT_SKILLS = path.join(REPO, "agent", "src", "skills");
 
 function parseFrontmatter(raw) {
@@ -113,10 +119,20 @@ function corrections() {
 }
 
 function applications() {
-  if (!fs.existsSync(APPLICATIONS)) return [];
-  return fs.readFileSync(APPLICATIONS, "utf8").split("\n").filter(Boolean).map((l) => {
-    try { return JSON.parse(l); } catch { return null; }
-  }).filter(Boolean);
+  const rows = [];
+  for (const log of APPLICATION_LOGS) {
+    if (!fs.existsSync(log)) continue;
+    for (const line of fs.readFileSync(log, "utf8").split("\n").filter(Boolean)) {
+      try {
+        const row = JSON.parse(line);
+        // The two producers name the field differently: agent/ records `skill`,
+        // the capabilities record `artifact`. Normalised here rather than
+        // forcing either side to rename a field it already writes.
+        rows.push({ ...row, artifact: row.artifact || row.skill });
+      } catch { /* a torn line is skipped, not guessed at */ }
+    }
+  }
+  return rows.sort((a, b) => String(a.at).localeCompare(String(b.at)));
 }
 
 function table(rows, cols) {
@@ -176,13 +192,13 @@ ${table(corr, [
 ])}
 ## Application provenance
 
-Every recorded use of a learned artifact, from \`agent/src/data/applications.jsonl\`. A row
+Every recorded use of a learned artifact, from \`agent/applications.jsonl\` and \`sre-engineer/applications.jsonl\`. A row
 here is what makes "this has been used" checkable rather than asserted. The counter is
 provenance only — nothing ranks, skips or retires an artifact by it.
 
 ${table(apps.slice(-25), [
   ["When", (r) => r.at],
-  ["Artifact", (r) => `\`${r.skill}\``],
+  ["Artifact", (r) => `\`${r.artifact}\``],
   ["Origin", (r) => r.origin],
   ["Count after", (r) => r.times_applied],
   ["Incident", (r) => r.incident_id || "—"],

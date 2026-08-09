@@ -1,3 +1,10 @@
+---
+name: lgtm-signal-gotchas
+description: Service-specific traps on this exact LGTM stack: payment's missing RED metrics, flagd EventStream skewing p99, container_name vs service_name.
+origin: base-external
+times_applied: 0
+---
+
 # LGTM signal gotchas on this specific target app (origin: base — externally sourced)
 
 Ported from PR #4's real, live-tested findings against this exact shared LGTM stack and

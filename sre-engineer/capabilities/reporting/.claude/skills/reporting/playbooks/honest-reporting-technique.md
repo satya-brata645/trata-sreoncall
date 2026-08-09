@@ -1,3 +1,10 @@
+---
+name: honest-reporting-technique
+description: Leading with the answer, citing only real numbers, and why a quiet shift still needs a report.
+origin: base
+times_applied: 0
+---
+
 # Base reporting heuristics (origin: base — hand-written, not learned)
 
 ## Lead with the answer, not the process

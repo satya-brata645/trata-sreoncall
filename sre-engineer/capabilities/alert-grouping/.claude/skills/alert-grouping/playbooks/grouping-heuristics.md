@@ -1,3 +1,10 @@
+---
+name: grouping-heuristics
+description: When alerts belong to one incident and when overlap in time is not proof of relatedness.
+origin: base
+times_applied: 0
+---
+
 # Base grouping heuristics (origin: base — hand-written, not learned)
 
 ## One bad change, many symptoms, one incident

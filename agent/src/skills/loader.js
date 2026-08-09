@@ -104,7 +104,11 @@ function loadByName(name) {
 // not an input to any decision. That would be exactly the smuggled threshold
 // this project bans everywhere else.
 
-const APPLICATIONS_LOG = path.join(__dirname, "..", "data", "applications.jsonl");
+// Deliberately NOT under src/data/, which is gitignored. This log is the whole
+// point of the counter — it is what makes "this learned skill has been used"
+// checkable by someone reading the repo rather than a claim they have to take
+// on trust. A provenance record nobody can see is not provenance.
+const APPLICATIONS_LOG = path.join(__dirname, "..", "..", "applications.jsonl");
 
 function bumpTimesApplied(filePath) {
   const raw = fs.readFileSync(filePath, "utf8");

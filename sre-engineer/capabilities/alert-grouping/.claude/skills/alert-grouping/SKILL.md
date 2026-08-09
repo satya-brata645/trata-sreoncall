@@ -186,11 +186,25 @@ fallback.
 
 ### Receipts — record what you actually used
 
-When you load and genuinely use a playbook or experience this shift, name it in your output and
-increment `times_applied` in that file's frontmatter. That counter is the difference between
-"there is a learning mechanism" and "here is something learned that has since been used." It is
-bookkeeping, never a gate: nothing may skip, retire or distrust a file because of its
-`times_applied` or `confidence` value.
+When you load and genuinely use a playbook, experience or baseline this shift, say so in your
+output *and* record it, so a reader can check the claim rather than take it:
+
+```bash
+node ../../scripts/record-application.js \
+  --capability alert-grouping --run "$OUTPUT_DIR" --incident "<incident id, if any>" \
+  <artifact-name> [<artifact-name> ...]
+```
+
+Name artifacts by their frontmatter `name` or filename (`product-catalog`,
+`investigation-heuristics`). The script bumps `times_applied` in the artifact's own frontmatter
+and appends a provenance row naming the run and incident. It prints an error for a name it
+cannot find rather than failing silently — if you see one, you cited something that does not
+exist, which is worth knowing.
+
+The split is deliberate: deciding you used something is your judgment; recording it is
+bookkeeping. The counter is provenance only — nothing may skip, rank, retire or distrust an
+artifact because of its `times_applied` or `confidence` value.
+
 
 ## Related capabilities
 

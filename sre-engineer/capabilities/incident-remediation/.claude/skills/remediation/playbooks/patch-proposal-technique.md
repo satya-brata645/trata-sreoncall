@@ -1,3 +1,10 @@
+---
+name: patch-proposal-technique
+description: Scoping a minimal fix, and the reckless patterns that look reasonable at a glance.
+origin: base
+times_applied: 0
+---
+
 # Base fix-proposal heuristics (origin: base — hand-written, not learned)
 
 ## Minimal, not clever

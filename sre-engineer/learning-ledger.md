@@ -37,7 +37,7 @@ either apply that or argue back. `applied` rows carry a note in the file saying 
 
 ## Application provenance
 
-Every recorded use of a learned artifact, from `agent/src/data/applications.jsonl`. A row
+Every recorded use of a learned artifact, from `agent/applications.jsonl` and `sre-engineer/applications.jsonl`. A row
 here is what makes "this has been used" checkable rather than asserted. The counter is
 provenance only — nothing ranks, skips or retires an artifact by it.
 
