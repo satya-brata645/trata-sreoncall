@@ -107,6 +107,49 @@ export function traceForEvent(event: SreEvent): MemoryTrace {
   };
 }
 
+/**
+ * A learning is not a transient observation, so it does not enter short-term
+ * memory and wait to prove itself worth keeping.
+ *
+ * The distinction is categorical rather than numeric: an incident report is a
+ * thing that happened, and most of them stop mattering within the hour. A
+ * learning is a lesson the SRE agent has already written down, cited to real
+ * evidence, and committed to a file — it arrived durable. Sending it through
+ * the same short-term decay as a routine detection would mean the agent could
+ * forget something it deliberately chose to remember, which is the opposite of
+ * the point.
+ *
+ * `procedure` for something that changes how work is done, `fact` for something
+ * observed about the system. Both are long-term kinds already.
+ */
+export function traceForLearning(event: SreEvent): MemoryTrace | null {
+  const learning = event.learning;
+  if (!learning) return null;
+  const isHowTo = learning.artifactKind === "playbook" || learning.artifactKind === "skill";
+  return {
+    id: `ltm-${event.id}`,
+    tier: "ltm",
+    kind: isHowTo ? "procedure" : "fact",
+    signature: `learning:${learning.capability}:${learning.artifact}`,
+    strength: 1,
+    hits: 1,
+    lastHitAt: event.receivedAt,
+    createdAt: event.receivedAt,
+    // A lesson absorbed from a correction starts as a contradiction of what the
+    // agent previously believed — recording that is the honest shape, and it is
+    // what makes "this belief changed, and here is what changed it" legible
+    // later rather than the belief simply appearing fully-formed.
+    confirmations: learning.origin === "correction-absorbed" ? 0 : 1,
+    contradictions: learning.origin === "correction-absorbed" ? 1 : 0,
+    evidence: event.evidence,
+    sourceEventIds: [event.id],
+    incidentId: event.incidentId,
+    headline: event.headline,
+    summary: learning.lesson,
+    activity: 1,
+  };
+}
+
 export function rankTraces<T extends MemoryTrace>(traces: readonly T[]): T[] {
   return [...traces].sort((a, b) => b.strength - a.strength || b.lastHitAt.localeCompare(a.lastHitAt));
 }
