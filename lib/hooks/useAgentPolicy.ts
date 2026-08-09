@@ -8,10 +8,10 @@
  * allowed to do — this only stops the interface lying about it, so the selector
  * can explain a downgrade instead of silently applying one.
  *
- * The policy is a fixture for now, but the wiring is real: the ceiling is
- * pushed into the mode store and a persister is registered, so the clamp stays
- * exercised rather than bypassed. When the endpoint lands, only `queryFn`
- * changes.
+ * The ceiling now comes from `/api/agent/policy`, which reads the same env value
+ * `/api/agent` re-reads on every turn — so the selector and the enforcement
+ * cannot drift. A request that fails falls back to the safest mode rather than
+ * the most permissive one: an unreachable policy must never widen the agent.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +36,11 @@ export const agentPolicyKeys = {
   policy: (orgId?: string) => ["agent-control", orgId ?? "personal", "policy"] as const,
 };
 
-const FIXTURE_POLICY: AgentPolicy = { preference: null, ceiling: "auto" };
+const SAFEST_POLICY: AgentPolicy = { preference: null, ceiling: "collab" };
+
+function isMode(value: unknown): value is OsAgentMode {
+  return value === "self" || value === "collab";
+}
 
 export function useAgentPolicy() {
   const { organization } = useOrganization();
@@ -44,7 +48,19 @@ export function useAgentPolicy() {
 
   const query = useQuery<AgentPolicy>({
     queryKey: agentPolicyKeys.policy(orgId),
-    queryFn: async () => FIXTURE_POLICY,
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/agent/policy");
+        if (!response.ok) return SAFEST_POLICY;
+        const body = (await response.json()) as Partial<AgentPolicy>;
+        return {
+          preference: isMode(body.preference) ? body.preference : null,
+          ceiling: isMode(body.ceiling) ? body.ceiling : SAFEST_POLICY.ceiling,
+        };
+      } catch {
+        return SAFEST_POLICY;
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 

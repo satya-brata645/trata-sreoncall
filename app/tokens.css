@@ -47,10 +47,15 @@
   --w-45: rgba(255, 255, 255, 0.45);
   --w-50: rgba(255, 255, 255, 0.5);
   --w-55: rgba(255, 255, 255, 0.55);
+  --w-60: rgba(255, 255, 255, 0.6);
+  --w-62: rgba(255, 255, 255, 0.62);
   --w-65: rgba(255, 255, 255, 0.65);
+  --w-70: rgba(255, 255, 255, 0.7);
   --w-75: rgba(255, 255, 255, 0.75);
+  --w-82: rgba(255, 255, 255, 0.82);
   --w-85: rgba(255, 255, 255, 0.85);
   --w-90: rgba(255, 255, 255, 0.9);
+  --w-92: rgba(255, 255, 255, 0.92);
 
   /* ---------------------------------------------------------------------------
      3. ROLE LAYER — the only layer components are allowed to touch
@@ -61,18 +66,18 @@
   --color-role-surface-page-alt: var(--dos-ink-alt);
 
   /* surfaces: containers (windows, cards, popovers) */
-  --color-role-surface-container-default: var(--w-05);
-  --color-role-surface-container-subtle: var(--w-03);
-  --color-role-surface-container-hover: var(--w-09);
-  --color-role-surface-container-emphasis: var(--w-10);
+  --color-role-surface-container-default: var(--w-07);
+  --color-role-surface-container-subtle: var(--w-05);
+  --color-role-surface-container-hover: var(--w-12);
+  --color-role-surface-container-emphasis: var(--w-14);
   --color-role-surface-container-strong: var(--dos-elevated);
   --color-role-surface-container-inverse: var(--dos-white);
 
   /* surfaces: components (rows, inputs, chips) */
-  --color-role-surface-component-default: var(--w-06);
-  --color-role-surface-component-subtle: var(--w-03);
-  --color-role-surface-component-hover: var(--w-10);
-  --color-role-surface-component-selected: var(--w-15);
+  --color-role-surface-component-default: var(--w-07);
+  --color-role-surface-component-subtle: var(--w-05);
+  --color-role-surface-component-hover: var(--w-12);
+  --color-role-surface-component-selected: var(--w-20);
   --color-role-surface-component-disabled: var(--w-03);
 
   /* surfaces: action — the primary action is WHITE, never a colour */
@@ -82,16 +87,16 @@
   --color-role-surface-action-disabled: var(--w-07);
 
   /* text */
-  --color-role-text-content-heading: var(--w-90);
-  --color-role-text-content-body: var(--w-75);
-  --color-role-text-content-subtle: var(--w-50);
-  --color-role-text-content-muted: var(--w-40);
-  --color-role-text-content-placeholder: var(--w-32);
+  --color-role-text-content-heading: var(--w-92);
+  --color-role-text-content-body: var(--w-82);
+  --color-role-text-content-subtle: var(--w-62);
+  --color-role-text-content-muted: var(--w-55);
+  --color-role-text-content-placeholder: var(--w-45);
 
   /* icons — thin strokes, so they sit a step brighter than their label */
-  --color-role-icon-content-default: var(--w-75);
-  --color-role-icon-content-muted: var(--w-50);
-  --color-role-icon-content-subtle: var(--w-32);
+  --color-role-icon-content-default: var(--w-82);
+  --color-role-icon-content-muted: var(--w-65);
+  --color-role-icon-content-subtle: var(--w-50);
 
   /* foregrounds */
   --color-role-foreground-accent: var(--dos-violet);
@@ -103,12 +108,12 @@
   --color-role-foreground-disabled: var(--w-24);
 
   /* borders — hairlines only */
-  --color-role-border-default: var(--w-14);
-  --color-role-border-subtle: var(--w-09);
-  --color-role-border-strong: var(--w-20);
-  --color-role-border-hover: var(--w-20);
-  --color-role-border-focus: var(--w-26);
-  --color-role-border-active: var(--w-28);
+  --color-role-border-default: var(--w-20);
+  --color-role-border-subtle: var(--w-14);
+  --color-role-border-strong: var(--w-28);
+  --color-role-border-hover: var(--w-26);
+  --color-role-border-focus: var(--w-40);
+  --color-role-border-active: var(--w-32);
   --color-role-border-brand: var(--dos-white);
   --color-role-border-inverse: rgba(10, 10, 10, 0.14);
   --color-role-border-disabled: var(--w-06);
@@ -224,7 +229,7 @@
      --------------------------------------------------------------------------- */
   --dos-blur: blur(40px) saturate(1.6);
   --dos-blur-sm: blur(30px) saturate(1.5);
-  --dos-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --dos-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --dos-shadow-window: 0 30px 80px rgba(0, 0, 0, 0.65);
   --dos-shadow-dock: 0 20px 50px rgba(0, 0, 0, 0.55);
   --dos-shadow-popover: 0 16px 40px rgba(0, 0, 0, 0.6);
@@ -233,10 +238,10 @@
      window in front had the *text of the window behind it* legible through its
      own body. Kept just short of opaque so the canvas grid still shows at the
      edges and the pane reads as a layer, not a page. */
-  --dos-window-bg: rgba(20, 20, 20, 0.96);
+  --dos-window-bg: rgba(20, 20, 20, 0.975);
 
   --dos-canvas-cell: 36px;
-  --dos-canvas-line: rgba(255, 255, 255, 0.038);
+  --dos-canvas-line: rgba(255, 255, 255, 0.048);
   --dos-menu-bar-height: 48px;
 }
 

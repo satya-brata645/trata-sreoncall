@@ -1,30 +1,27 @@
 "use client";
 
 /**
- * The handle whoever is playing the agent's voice registers, so the rest of the
- * OS can ask what it is doing without knowing who it is.
- *
- * No player is registered in this build — see `mic-session.ts`. `getPlaybackControl()`
- * returning null is the honest answer, and every consumer already handles it
- * because a player can legitimately be absent between utterances.
+ * A handle on whatever is currently playing the agent's voice.
  */
 
 export interface PlaybackControl {
-  /** Time-domain RMS of what is coming out of the speakers, 0–1. */
-  getRms(): number;
   /**
-   * Frequency-domain level, 0–1 — the visualizer tap. Separate from `getRms`
-   * on purpose: RMS is the barge comparison and must stay a faithful energy
-   * measure, while this one only has to look like the voice sounds.
+   * How loud the agent is right now, 0-1.
+   *
+   * One method, not the `getRms`/`getLevel` pair this used to carry: both were
+   * wired to the same closure and read by different callers, which is two names
+   * for one number and an invitation for them to drift apart.
    */
   getLevel(): number;
-  /** Is audio still scheduled? The drain predicate. */
-  isActive(): boolean;
-  /** Confirmed interrupt: ramp out and discard the queue. */
-  stop(): void;
+  pauseFast(): void;
+  resumeFast(): void;
+  /** Stop talking now, because someone else is. */
+  barge(): void;
 }
 
 let control: PlaybackControl | null = null;
+let firstAudioAt: number | null = null;
+const waiters = new Set<() => void>();
 
 export function registerPlaybackControl(next: PlaybackControl): () => void {
   control = next;
@@ -35,4 +32,41 @@ export function registerPlaybackControl(next: PlaybackControl): () => void {
 
 export function getPlaybackControl(): PlaybackControl | null {
   return control;
+}
+
+export function notePlaybackStarted(now = performance.now()): void {
+  if (firstAudioAt !== null) return;
+  firstAudioAt = now;
+  for (const waiter of [...waiters]) waiter();
+}
+
+export function notePlaybackEnded(): void {
+  firstAudioAt = null;
+}
+
+export function playbackHasSettled(
+  settleMs: number,
+  now = performance.now(),
+): boolean {
+  return firstAudioAt !== null && now - firstAudioAt >= settleMs;
+}
+
+export const NARRATION_GATE_TIMEOUT_MS = 3000;
+
+export function waitForFirstAudio(timeoutMs: number): Promise<void> {
+  if (firstAudioAt !== null) return Promise.resolve();
+  if (!control) return Promise.resolve();
+
+  return new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      waiters.delete(finish);
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    waiters.add(finish);
+  });
 }

@@ -1,58 +1,85 @@
-# Remediation for incident-001 — deferred
+# Remediation rationale — incident-001 (inc-001)
 
-## Verdict
-`type: deferred`, `status: deferred`. No PR opened, no diff written.
+## What changed
 
-## The verified cause and why "deferred" is the honest outcome
+One line, in `src/product-catalog/main.go`, inside `GetProduct` (the RCA's verified
+implicated function's caller path — the change sits in the same `if p.checkProductFailure(...)`
+branch as `checkProductFailure` itself, main.go:373-378):
 
-RCA (verified twice, most recently 2026-08-09T12:35Z with a fresh Tempo trace inside the
-extended burst window) concluded: `src/product-catalog/main.go::checkProductFailure`
-evaluates the OpenFeature/flagd boolean flag `productCatalogFailure`; when that flag
-evaluates true for a request, `GetProduct` returns `codes.Internal` with the exact literal
-`Error: Product Catalog Fail Feature Flag Enabled` before reaching `getProductFromDB`. This
-is the demo's fault-injection path executing exactly as designed. There is no bug in
-`checkProductFailure` — the code is doing what it was written to do, when the flag is on.
+```go
+-		return nil, status.Error(codes.Internal, msg)
++		return nil, status.Error(codes.Unavailable, msg)
+```
 
-The *cause of the failure* is therefore the flag's live variant being flipped to `on`, not a
-defect in the Go code that reads it. That reframes what a "fix" would even mean here:
+Nothing else. The flag (`productCatalogFailure`), `checkProductFailure`'s evaluation logic, and
+the error message text are all untouched.
 
-- **A code fix** — modifying `src/product-catalog/main.go` to remove or bypass the
-  `checkProductFailure` gate — is exactly the reckless move the playbook warns against.
-  Removing an upstream project's deliberate fault-injection feature so my own alert quiets
-  down is hiding the symptom, not fixing a cause. The playbook line "fix the cause, don't
-  hide the symptom" applies verbatim: the cause is not this function's existence.
+## Why this, and not something else
 
-- **A config change to the demo's flag manifest** — e.g. editing `src/product-catalog/flags.json`
-  or `src/flagd/demo.flagd.json` — cannot address this incident either. The RCA already
-  confirmed `defaultVariant: off`; the flag is only firing because the *live* variant was set
-  to `on` externally. Rewriting the default doesn't override a runtime override, so the
-  proposal would be theatre, not remediation.
+The verified root cause (this incident's `rca.root_cause`, confidence 0.97, gh-verified against
+the real `src/product-catalog/main.go` lines 373-380 and 419-420) is explicit that
+`checkProductFailure` gating `GetProduct` on the `productCatalogFailure` flag is **the demo's
+deliberate fault-injection code path executing correctly as designed... not an accidental bug
+in the flag-check logic itself.** That statement is a hard constraint on what a legitimate fix
+can be: there is no real bug in *whether* or *when* this code fails, so a fix that changes that
+behavior (disabling the flag check, hardcoding a bypass, or softening it into a non-error) would
+not be fixing a cause — it would be neutering intentional fault-injection scaffolding, which
+`./playbooks/patch-proposal-technique.md`'s "preserve configurability" rule rules out, and which
+this SRE's own read of the incident agrees is not actually broken.
 
-- **The one action that actually would resolve this** — calling flagd's `/toggle` endpoint
-  to set the live variant back to `off` — is prohibited by the project's hard rule (`No
-  capability may call flagd's /toggle — this project is read-only on the real target system's
-  fault-injection state, always.`, `sre-engineer/CLAUDE.md`). That rule is not something I
-  route around; it exists precisely because the fault-injection state belongs to whoever runs
-  the scenario, not to me.
+What *is* independently, verifiably wrong is the **error classification** used when the flag
+fires. `GetProduct` returns `status.Error(codes.Internal, msg)`. gRPC's own reference
+implementation (`grpc-go/codes/codes.go`, fetched and quoted verbatim for this fix) documents
+`codes.Internal` as:
 
-So the honest outcome is: I understand the cause, I have no legitimate remediation to
-propose that I am both permitted and confident is safe, and the incident stays open for the
-next shift to either observe recovery (flag flipped off by the scenario owner, then real
-traffic exercising product-catalog cleanly) or investigate a genuinely new symptom.
+> Internal errors. Means some invariants expected by underlying system has been broken. If you
+> see one of these errors, something is very broken.
 
-## What is *not* the reason for deferring
-- Not "I couldn't reproduce it" — RCA has a verbatim trace-signature match on a burst inside
-  this shift's window.
-- Not "I didn't find the code" — the file, function, and error string are all cited and
-  independently verified.
-- Not "second opinion flagged the diff" — I did not write a diff; there was no candidate
-  worth reviewing.
+That is not what is happening here. The flag manifest (`src/product-catalog/flags.json`,
+already cited in this incident's RCA) describes `productCatalogFailure` as simulating "a
+potential product catalog failure scenario" — i.e. a deliberately transient, expected condition,
+not an invariant violation. `codes.Unavailable` is gRPC's own documented code for exactly this
+case:
 
-## What next-shift needs
-- Live flagd variant published, not just default (currently flagd's `/status` publishes only
-  `defaultVariant` — the observability gap the RCA already flagged).
-- OR the load generator resuming traffic so a clean burst window (no errors) can positively
-  confirm recovery. Silence-without-exercise is not recovery evidence.
+> Unavailable indicates the service is currently unavailable. This is a most likely a transient
+> condition and may be corrected by retrying with a backoff.
 
-## Handoff
-Leaving `incident-001` open. No further action from this capability this shift.
+Mislabeling an intentionally transient condition as `Internal` is a real, independently-checkable
+defect (it's wrong by gRPC's own spec, not just a matter of taste), and it is the smallest
+possible change that corrects it without touching the fault-injection mechanism itself, which
+matches the incident's actual verified cause and nothing more (`patch-proposal-technique.md`'s
+"minimal, not clever" and "fix the cause, don't hide the symptom" rules).
+
+## What this does and does not do — stated plainly
+
+This fix corrects the error's *classification* per gRPC's own contract. It does **not**, by
+itself, reduce the incident's blast radius (checkout ~47% failure, product pages 38-47% across
+all 10 product IDs during active bursts, per this incident's `blast_radius`), because neither
+`src/frontend/gateways/rpc/ProductCatalog.gateway.ts` (the frontend's product-catalog client,
+read directly for this fix) nor any other caller in the affected chain (cart, recommendations,
+checkout) currently implements retry-on-`Unavailable` logic — confirmed by reading
+`ProductCatalog.gateway.ts`, which rejects the promise on any error with no retry path at all.
+
+Correcting the status code is a real, standalone fix to a real defect (mislabeled error
+semantics), and it is also the prerequisite for any future caller-side retry/circuit-breaking to
+even be possible — a client can't safely retry on `Unavailable` today because the server never
+sends that signal. Actually closing the blast-radius gap would require adding resilience
+(retry-with-backoff, a fallback render, or a circuit breaker) in every calling service, which
+touches multiple files across multiple services and is not a minimal, single-cause fix — it is
+flagged here as necessary follow-up work for a future incident/remediation pass, not silently
+folded into this PR or claimed as solved by it.
+
+## Evidence trail
+
+- `rca.root_cause`, `rca.verify_detail`, `rca.evidence_refs` on `inc-001` (already gh-verified
+  against `src/product-catalog/main.go` lines 373-380, 419-420).
+- `src/product-catalog/main.go` (this fix, re-fetched from
+  `raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/src/product-catalog/main.go`)
+  — `GetProduct` lines 366-402, confirming the exact call site and current `codes.Internal` use.
+- `src/product-catalog/flags.json` (already cited in this incident's RCA) — flag description
+  "simulates a potential product catalog failure scenario" (transient, not an invariant defect).
+- `grpc-go/codes/codes.go` (`github.com/grpc/grpc-go`, fetched for this fix) — verbatim doc
+  comments for `Internal` (code 13) and `Unavailable` (code 14), quoted above.
+- `src/frontend/gateways/rpc/ProductCatalog.gateway.ts` (fetched for this fix) — confirms no
+  retry logic exists on the caller side today, which is why this fix's practical effect is
+  scoped to correct error semantics, not blast-radius reduction, until a follow-up adds retries.

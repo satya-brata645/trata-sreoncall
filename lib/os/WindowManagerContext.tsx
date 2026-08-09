@@ -14,12 +14,17 @@ import {
   OS_GRID_CELL,
   OS_WINDOW_BASE_Z,
   OS_WINDOW_CASCADE,
-  OS_WINDOW_MIN_SIZE,
   OS_WINDOW_OPEN_MARGIN_CELLS,
+  OS_WINDOW_OPEN_SIZE,
   OS_MENU_BAR_HEIGHT,
 } from "./constants";
 import { getOsApp } from "./registry";
-import { snapRect, type OsRect, type OsSnapPreset } from "./geometry";
+import {
+  openWindowRect,
+  snapRect,
+  type OsRect,
+  type OsSnapPreset,
+} from "./geometry";
 import type { OsAppId, OsWindowInstance } from "./types";
 
 /**
@@ -223,32 +228,22 @@ export function WindowManagerProvider({
         // so a double-invoked updater produces the same answer.
         const step = prev.length % OS_WINDOW_CASCADE.maxSteps;
 
-        // Open filling most of the desktop. A freshly launched app is the thing
-        // you want to look at, so it takes the available area minus the dock
-        // column and a one-cell margin, rather than a fixed size that would need
-        // resizing on any large display.
         const cascadeOffset =
           step * OS_WINDOW_CASCADE.stepCells * OS_GRID_CELL;
-        const x =
-          OS_WINDOW_OPEN_MARGIN_CELLS.left * OS_GRID_CELL + cascadeOffset;
-        // The menu bar owns the top strip, so a freshly opened window starts
-        // below it rather than underneath it.
-        const y =
-          OS_MENU_BAR_HEIGHT +
-          OS_WINDOW_OPEN_MARGIN_CELLS.top * OS_GRID_CELL +
-          cascadeOffset;
-
-        // The cascade offset comes out of the size too, so the Nth window still
-        // ends inside the right/bottom margin instead of running off-screen.
-        const availableWidth =
-          window.innerWidth - x - OS_WINDOW_OPEN_MARGIN_CELLS.right * OS_GRID_CELL;
-        const availableHeight =
-          window.innerHeight - y - OS_WINDOW_OPEN_MARGIN_CELLS.bottom * OS_GRID_CELL;
-
-        // Floor at the hard minimum so the title bar stays usable even on a
-        // viewport too small for the margins.
-        const width = Math.max(OS_WINDOW_MIN_SIZE.width, availableWidth);
-        const height = Math.max(OS_WINDOW_MIN_SIZE.height, availableHeight);
+        const { x, y, width, height } = openWindowRect(
+          { width: window.innerWidth, height: window.innerHeight },
+          {
+            left: OS_WINDOW_OPEN_MARGIN_CELLS.left * OS_GRID_CELL,
+            top:
+              OS_MENU_BAR_HEIGHT +
+              OS_WINDOW_OPEN_MARGIN_CELLS.top * OS_GRID_CELL,
+            right: OS_WINDOW_OPEN_MARGIN_CELLS.right * OS_GRID_CELL,
+            bottom: OS_WINDOW_OPEN_MARGIN_CELLS.bottom * OS_GRID_CELL,
+            cascadeOffset,
+            widthRatio: OS_WINDOW_OPEN_SIZE.widthRatio,
+            heightRatio: OS_WINDOW_OPEN_SIZE.heightRatio,
+          },
+        );
 
         return [
           ...prev,

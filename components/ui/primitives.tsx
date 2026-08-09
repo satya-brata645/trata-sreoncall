@@ -188,17 +188,12 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-md py-2xl text-center">
-      <span className="flex size-[60px] items-center justify-center rounded-lg border border-dashed border-role-border-strong text-role-icon-subtle">
+      <span className="flex size-[60px] items-center justify-center rounded-lg border border-dashed border-role-border-strong bg-role-surface-component-subtle text-role-content-subtle">
         {icon ? <Icon icon={icon} size={20} /> : <span className="text-heading-lg font-light">+</span>}
       </span>
-      <div className="dos-label leading-[2.1]">
-        {title}
-        {hint && (
-          <>
-            <br />
-            {hint}
-          </>
-        )}
+      <div className="flex flex-col items-center gap-1">
+        <p className="dos-label text-role-content-subtle">{title}</p>
+        {hint && <p className="dos-label text-role-content-muted">{hint}</p>}
       </div>
     </div>
   );

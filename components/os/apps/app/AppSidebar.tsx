@@ -2,8 +2,8 @@
 
 import { AppNotes } from "./AppNotes";
 import { APP_SIDEBAR_WIDTH_PX } from "./AppWindowChrome";
-import { Icon, SectionLabel } from "@/components/ui/primitives";
-import { appGlyph } from "@/lib/os/appGlyphs";
+import { SectionLabel } from "@/components/ui/primitives";
+import { AppIcon } from "@/components/os/icons/AppIcon";
 
 export function AppSidebar({
   appId,
@@ -16,8 +16,6 @@ export function AppSidebar({
   description?: string | null;
   tags?: readonly string[];
 }) {
-  const glyph = appGlyph(appId, { name: appName, description, tags });
-
   return (
     <aside
       style={{ width: APP_SIDEBAR_WIDTH_PX }}
@@ -25,12 +23,14 @@ export function AppSidebar({
     >
       <div className="border-b border-role-border-subtle px-md py-md">
         <div className="flex items-start gap-sm">
-          <span
-            style={{ color: glyph.tint }}
-            className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xs bg-role-surface-component"
-          >
-            <Icon icon={glyph.icon} size={18} />
-          </span>
+          <AppIcon
+            appId={appId}
+            name={appName}
+            description={description}
+            tags={tags}
+            size={36}
+            className="mt-0.5"
+          />
           <div className="min-w-0">
             <h2 className="truncate text-heading-xs font-semibold text-role-content-heading">
               {appName}

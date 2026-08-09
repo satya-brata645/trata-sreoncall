@@ -112,21 +112,21 @@ test("collab refuses an INSIDE-app write when approval was never given", () => {
   assert.equal(result.effect, undefined);
 });
 
-test("auto performs writes with no approval at all", () => {
+test("collab arranges windows without approval", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat" })]);
   const result = plan(
     state,
     { verb: "snap", handle: 1, preset: "left-half" },
-    "auto",
+    "collab",
     { approved: false },
   );
   assert.equal(result.outcome.status, "ok");
   assert.ok(result.effect);
 });
 
-test("full screen is refused even in auto, and says what to use instead", () => {
+test("full screen is refused in every mode, and says what to use instead", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat" })]);
-  const result = plan(state, { verb: "full_screen", handle: 1, on: true }, "auto");
+  const result = plan(state, { verb: "full_screen", handle: 1, on: true }, "collab");
   assert.equal(result.outcome.status, "refused");
   assert.match(result.outcome.detail, /fill/);
   assert.equal(result.effect, undefined);
@@ -142,7 +142,7 @@ test("snapping a window to where it already is does nothing", () => {
   const state = desktop([
     osWindow({ id: "w1", appId: "chat", snappedTo: "left-half" }),
   ]);
-  const result = plan(state, { verb: "snap", handle: 1, preset: "left-half" }, "auto");
+  const result = plan(state, { verb: "snap", handle: 1, preset: "left-half" }, "collab");
   assert.equal(result.outcome.status, "noop");
   assert.equal(result.effect, undefined);
 });
@@ -151,7 +151,7 @@ test("snapping to a different arrangement does move it", () => {
   const state = desktop([
     osWindow({ id: "w1", appId: "chat", snappedTo: "left-half" }),
   ]);
-  const result = plan(state, { verb: "snap", handle: 1, preset: "right-half" }, "auto");
+  const result = plan(state, { verb: "snap", handle: 1, preset: "right-half" }, "collab");
   assert.equal(result.outcome.status, "ok");
   assert.deepEqual(result.effect, {
     kind: "snapWindow",
@@ -162,25 +162,25 @@ test("snapping to a different arrangement does move it", () => {
 
 test("minimizing an already-minimized window does nothing", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat", isMinimized: true })]);
-  const result = plan(state, { verb: "minimize", handle: 1 }, "auto");
+  const result = plan(state, { verb: "minimize", handle: 1 }, "collab");
   assert.equal(result.outcome.status, "noop");
 });
 
 test("restoring a window that is not minimized does nothing", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat" })]);
-  const result = plan(state, { verb: "restore", handle: 1 }, "auto");
+  const result = plan(state, { verb: "restore", handle: 1 }, "collab");
   assert.equal(result.outcome.status, "noop");
 });
 
 test("focusing the front window does nothing", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat" })], "w1");
-  const result = plan(state, { verb: "focus", handle: 1 }, "auto");
+  const result = plan(state, { verb: "focus", handle: 1 }, "collab");
   assert.equal(result.outcome.status, "noop");
 });
 
 test("focusing a minimized window restores it rather than raising something invisible", () => {
   const state = desktop([osWindow({ id: "w1", appId: "chat", isMinimized: true })]);
-  const result = plan(state, { verb: "focus", handle: 1 }, "auto");
+  const result = plan(state, { verb: "focus", handle: 1 }, "collab");
   assert.equal(result.outcome.status, "ok");
   assert.deepEqual(result.effect, { kind: "restoreWindow", windowId: "w1" });
 });
@@ -192,7 +192,7 @@ test("setting the geometry a window already has does nothing", () => {
   const result = plan(
     state,
     { verb: "set_geometry", handle: 1, rect: { x: 10, y: 20, width: 300, height: 400 } },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "noop");
 });
@@ -201,14 +201,14 @@ test("pinning an app that is already pinned does nothing", () => {
   const result = plan(
     desktop(),
     { verb: "pin_app", appId: "pentest" },
-    "auto",
+    "collab",
     { pinnedAppIds: new Set(["pentest"]) },
   );
   assert.equal(result.outcome.status, "noop");
 });
 
 test("unpinning an app that was never pinned does nothing", () => {
-  const result = plan(desktop(), { verb: "unpin_app", appId: "pentest" }, "auto");
+  const result = plan(desktop(), { verb: "unpin_app", appId: "pentest" }, "collab");
   assert.equal(result.outcome.status, "noop");
 });
 
@@ -217,7 +217,7 @@ test("unpinning an app that was never pinned does nothing", () => {
 // ---------------------------------------------------------------------------
 
 test("opening an OS app goes straight to its registry id", () => {
-  const result = plan(desktop(), { verb: "open_app", appId: "files" }, "auto");
+  const result = plan(desktop(), { verb: "open_app", appId: "files" }, "collab");
   assert.deepEqual(result.effect, {
     kind: "openApp",
     appId: "files",
@@ -226,7 +226,7 @@ test("opening an OS app goes straight to its registry id", () => {
 });
 
 test("opening a security app routes through the shared host with its project param", () => {
-  const result = plan(desktop(), { verb: "open_app", appId: "pentest" }, "auto");
+  const result = plan(desktop(), { verb: "open_app", appId: "pentest" }, "collab");
   assert.deepEqual(result.effect, {
     kind: "openApp",
     appId: "security-app",
@@ -236,7 +236,7 @@ test("opening a security app routes through the shared host with its project par
 });
 
 test("opening an unknown app fails recoverably and names real ids", () => {
-  const result = plan(desktop(), { verb: "open_app", appId: "not-real" }, "auto");
+  const result = plan(desktop(), { verb: "open_app", appId: "not-real" }, "collab");
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /chat/);
   assert.equal(result.effect, undefined);
@@ -245,13 +245,13 @@ test("opening an unknown app fails recoverably and names real ids", () => {
 test("opening ends the batch only when it actually adds a window", () => {
   // A fresh open changes the set, so everything after it is re-planned...
   assert.equal(
-    plan(desktop(), { verb: "open_app", appId: "chat" }, "auto").endsBatch,
+    plan(desktop(), { verb: "open_app", appId: "chat" }, "collab").endsBatch,
     true,
   );
   // ...but re-opening something already there only focuses it, and spending a
   // round-trip to rediscover that would be waste.
   const open = desktop([osWindow({ id: "w1", appId: "chat" })]);
-  const result = plan(open, { verb: "open_app", appId: "chat" }, "auto");
+  const result = plan(open, { verb: "open_app", appId: "chat" }, "collab");
   assert.equal(result.endsBatch, false);
   assert.match(result.outcome.detail, /already open/);
 });
@@ -265,7 +265,7 @@ test("a hallucinated handle fails recoverably and names the real ones", () => {
     osWindow({ id: "w1", appId: "chat" }),
     osWindow({ id: "w2", appId: "files" }),
   ]);
-  const result = plan(state, { verb: "minimize", handle: 7 }, "auto");
+  const result = plan(state, { verb: "minimize", handle: 7 }, "collab");
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /\[1\], \[2\]/);
   assert.equal(result.effect, undefined);
@@ -292,7 +292,7 @@ test("a batch planned against a stale desktop is rejected whole", () => {
         { verb: "minimize", handle: 1 },
       ],
     },
-    "auto",
+    "collab",
     CONTEXT,
   );
   assert.ok(result.rejection);
@@ -313,7 +313,7 @@ test("a batch truncates after a step that changes which windows exist", () => {
         { verb: "snap", handle: 2, preset: "right-half" },
       ],
     },
-    "auto",
+    "collab",
     CONTEXT,
   );
   assert.equal(result.planned.length, 2);
@@ -337,7 +337,7 @@ test("a batch of pure state changes runs end to end", () => {
         { verb: "focus", handle: 1 },
       ],
     },
-    "auto",
+    "collab",
     CONTEXT,
   );
   assert.equal(result.planned.length, 3);
@@ -356,7 +356,7 @@ test("re-opening something already open does not truncate the batch", () => {
         { verb: "snap", handle: 1, preset: "left-half" },
       ],
     },
-    "auto",
+    "collab",
     CONTEXT,
   );
   assert.equal(result.planned.length, 2);
@@ -375,7 +375,7 @@ test("outcomes carry their position, so partial results are unambiguous", () => 
         { verb: "minimize", handle: 1 },
       ],
     },
-    "auto",
+    "collab",
     CONTEXT,
   );
   assert.deepEqual(
@@ -429,9 +429,11 @@ test("one INSIDE-app step makes the whole batch need approval", () => {
   );
 });
 
-test("nothing needs approval in auto", () => {
+test("self needs no approval because it is offered nothing", () => {
+  // Not "everything is allowed" — the opposite. Every verb is denied outright
+  // in Self, so there is never a plan to consent to.
   assert.equal(
-    batchNeedsApproval([{ verb: "close_window", handle: 1 }], "auto"),
+    batchNeedsApproval([{ verb: "focus_panel", handle: 1, panel: "memory" }], "self"),
     false,
   );
 });
@@ -477,7 +479,7 @@ test("focus_panel switches which part of an app is showing", () => {
   const result = plan(
     withPanels("config"),
     { verb: "focus_panel", handle: 1, panel: "memory" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "ok");
   assert.deepEqual(result.effect, {
@@ -491,7 +493,7 @@ test("focus_panel is idempotent like every other setter", () => {
   const result = plan(
     withPanels("memory"),
     { verb: "focus_panel", handle: 1, panel: "memory" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "noop");
   assert.equal(result.effect, undefined);
@@ -501,7 +503,7 @@ test("an unknown panel fails recoverably and names the real ones", () => {
   const result = plan(
     withPanels("config"),
     { verb: "focus_panel", handle: 1, panel: "nonsense" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /config, memory, cortex/);
@@ -513,7 +515,7 @@ test("an app with no panels says so rather than failing obscurely", () => {
   const result = plan(
     state,
     { verb: "focus_panel", handle: 1, panel: "memory" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /no panels/);
@@ -525,7 +527,7 @@ test("focus_panel does not end a batch — the window set is untouched", () => {
   const result = plan(
     withPanels("config"),
     { verb: "focus_panel", handle: 1, panel: "memory" },
-    "auto",
+    "collab",
   );
   assert.equal(result.endsBatch, false);
 });
@@ -576,7 +578,7 @@ test("set_affordance sets a control", () => {
   const result = plan(
     withControls(),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "pentest" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "ok");
   assert.deepEqual(result.effect, {
@@ -590,7 +592,7 @@ test("an empty value clears the control", () => {
   const result = plan(
     withControls({ search: "pentest" }),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "ok");
   assert.match(result.outcome.detail, /Cleared/);
@@ -602,7 +604,7 @@ test("setting a control to what it already is, is a no-op", () => {
   const result = plan(
     withControls({ search: "pentest" }),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "pentest" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "noop");
   assert.equal(result.effect, undefined);
@@ -612,7 +614,7 @@ test("an unknown control fails recoverably and names the real ones", () => {
   const result = plan(
     withControls(),
     { verb: "set_affordance", handle: 1, affordance: "nonsense", value: "x" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /search/);
@@ -626,7 +628,7 @@ test("a value outside a filter's options is refused, not silently applied", () =
   const result = plan(
     withControls(),
     { verb: "set_affordance", handle: 1, affordance: "severity", value: "spicy" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "failed");
   assert.match(result.outcome.detail, /critical, high/);
@@ -637,7 +639,7 @@ test("a free-text control accepts anything", () => {
   const result = plan(
     withControls(),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "anything at all" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "ok");
 });
@@ -646,7 +648,7 @@ test("a window with no controls says so rather than throwing", () => {
   const result = plan(
     desktop([osWindow({ id: "w1", appId: "chat" })]),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "x" },
-    "auto",
+    "collab",
   );
   assert.equal(result.outcome.status, "failed");
   assert.equal(result.effect, undefined);
@@ -659,7 +661,7 @@ test("set_affordance does not end a batch", () => {
   const result = plan(
     withControls(),
     { verb: "set_affordance", handle: 1, affordance: "search", value: "x" },
-    "auto",
+    "collab",
   );
   assert.equal(result.endsBatch, false);
 });
@@ -670,5 +672,4 @@ test("set_affordance is refused in Self and asks in Collab", () => {
   // skip consent.
   assert.equal(VERB_TABLE.set_affordance.permissions.self, "deny");
   assert.equal(VERB_TABLE.set_affordance.permissions.collab, "ask");
-  assert.equal(VERB_TABLE.set_affordance.permissions.auto, "allow");
 });

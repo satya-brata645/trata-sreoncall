@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { snapRect } from "../geometry";
-import { OS_MENU_BAR_HEIGHT } from "../constants";
+import { moveRect, openWindowRect, resizeRect, snapRect } from "../geometry";
+import { OS_MENU_BAR_HEIGHT, OS_WINDOW_MIN_SIZE } from "../constants";
 
 const BOUNDS = { width: 1600, height: 900 };
 const DOCK_INSET = 72;
@@ -76,4 +76,63 @@ test("snapRect: left and right halves meet exactly", () => {
   const right = snapRect("right-half", BOUNDS, FULL_INSET);
   assert.equal(left.x + left.width, right.x);
   assert.equal(right.x + right.width, BOUNDS.width);
+});
+
+test("openWindowRect: opens below reserved chrome as a free-floating pane", () => {
+  const rect = openWindowRect(BOUNDS, {
+    left: DOCK_INSET,
+    top: OS_MENU_BAR_HEIGHT + 36,
+    right: 36,
+    bottom: 36,
+    cascadeOffset: 0,
+    widthRatio: 0.72,
+    heightRatio: 0.78,
+  });
+
+  assert.equal(rect.x, DOCK_INSET);
+  assert.equal(rect.y, OS_MENU_BAR_HEIGHT + 36);
+  assert.ok(rect.width < BOUNDS.width - DOCK_INSET - 36);
+  assert.ok(rect.height < BOUNDS.height - (OS_MENU_BAR_HEIGHT + 36) - 36);
+  assert.ok(rect.width >= OS_WINDOW_MIN_SIZE.width);
+  assert.ok(rect.height >= OS_WINDOW_MIN_SIZE.height);
+});
+
+test("openWindowRect: later cascade steps stay within the desktop work area", () => {
+  const rect = openWindowRect(BOUNDS, {
+    left: DOCK_INSET,
+    top: OS_MENU_BAR_HEIGHT + 36,
+    right: 36,
+    bottom: 36,
+    cascadeOffset: 108,
+    widthRatio: 0.72,
+    heightRatio: 0.78,
+  });
+
+  assert.equal(rect.x, DOCK_INSET + 108);
+  assert.equal(rect.y, OS_MENU_BAR_HEIGHT + 36 + 108);
+  assert.ok(rect.x + rect.width <= BOUNDS.width - 36);
+  assert.ok(rect.y + rect.height <= BOUNDS.height - 36);
+});
+
+test("moveRect: a free-floating window cannot be dragged under the menu bar", () => {
+  const rect = moveRect(
+    { x: 120, y: OS_MENU_BAR_HEIGHT + 24, width: 720, height: 520 },
+    0,
+    -400,
+    BOUNDS,
+  );
+
+  assert.equal(rect.y, OS_MENU_BAR_HEIGHT);
+});
+
+test("resizeRect: the north edge cannot be pulled under the menu bar", () => {
+  const rect = resizeRect(
+    { x: 120, y: OS_MENU_BAR_HEIGHT + 60, width: 720, height: 520 },
+    "n",
+    0,
+    -400,
+    BOUNDS,
+  );
+
+  assert.equal(rect.y, OS_MENU_BAR_HEIGHT);
 });

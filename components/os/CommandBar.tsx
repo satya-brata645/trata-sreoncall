@@ -38,6 +38,7 @@ import {
  */
 export function CommandBar({
   autoFocus,
+  spokenSummons = false,
   narration,
   isDriving,
   voiceState,
@@ -47,6 +48,16 @@ export function CommandBar({
 }: {
   /** True when the user summoned it. False when the agent raised it itself. */
   autoFocus: boolean;
+  /**
+   * The wake word raised this bar, so the microphone is already open and the
+   * user is mid-sentence.
+   *
+   * Push-to-talk is right for a bar summoned with a chord and wrong for one
+   * summoned by voice: someone who has just said "hey SOS" is about to say the
+   * instruction, and muting them at exactly that moment loses it. The session
+   * sits in `awake` waiting for words that can no longer reach it.
+   */
+  spokenSummons?: boolean;
   /** What the agent is saying right now, if anything. */
   narration?: string | null;
   isDriving: boolean;
@@ -100,19 +111,29 @@ export function CommandBar({
   const [latched, setLatched] = useState(false);
   const heldRef = useRef(false);
 
+  // Mute for the bar's own lifetime, then put the microphone back exactly as
+  // it was found.
+  //
+  // Forcing it muted on unmount reached past this surface into a session it
+  // does not own: with "hey SOS" listening enabled, one summons — even one the
+  // agent raised itself — muted the shared microphone for good, and nothing on
+  // screen offered to unmute it. The wake word simply stopped working, while
+  // the menu-bar toggle still said it was on.
+  //
+  // Restoring covers the latch too: a bar that opened the microphone itself
+  // found it muted at mount, so it still closes it on the way out.
   useEffect(() => {
-    setMicMuted(true);
-    return () => {
-      // Never leave a microphone open behind a surface that has gone away.
-      setMicMuted(true);
-    };
-  }, []);
+    const wasMuted = isMicMuted();
+    if (!spokenSummons) setMicMuted(true);
+    return () => setMicMuted(wasMuted);
+  }, [spokenSummons]);
 
   const releaseHold = useCallback(() => {
     if (!heldRef.current) return;
     heldRef.current = false;
-    if (!latched) setMicMuted(true);
-  }, [latched]);
+    // A spoken summons did not open this microphone and must not close it.
+    if (!latched && !spokenSummons) setMicMuted(true);
+  }, [latched, spokenSummons]);
 
   useEffect(() => {
     const onKeyUp = (event: KeyboardEvent) => {

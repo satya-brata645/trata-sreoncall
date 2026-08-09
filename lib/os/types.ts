@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { AppArtworkProps } from "@/components/os/icons/AppArtwork";
 import type { OsRect, OsSnapPreset } from "./geometry";
 
 /**
@@ -44,7 +45,21 @@ export interface OsAppDefinition {
   id: OsAppId;
   /** Shown in the window title bar and the dock tooltip. */
   title: string;
+  /**
+   * The app's stroke symbol, for dense or textual contexts — a menu row, a
+   * window's chrome, a line of prose. Never a launcher: those show `artwork`.
+   */
   icon: LucideIcon;
+  /**
+   * The app's icon — a drawn, coloured tile, shown wherever the app is being
+   * *launched* rather than merely referred to.
+   *
+   * Optional so a new app is a working entry the moment its component exists;
+   * the dock falls back to the stroke symbol until someone draws one. That is
+   * the honest order — an app with no icon yet is not an app that should be
+   * unreachable.
+   */
+  artwork?: ComponentType<AppArtworkProps>;
   /** Rendered inside the window body. */
   component: ComponentType<OsAppProps>;
   /**

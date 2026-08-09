@@ -39,12 +39,12 @@ function WindowControl({
       title={label}
       onClick={onClick}
       className={cn(
-        "flex size-[26px] items-center justify-center rounded-2xs",
-        "text-role-icon-muted transition-colors",
+        "flex size-[26px] items-center justify-center rounded-2xs border",
+        "border-role-border-subtle bg-role-surface-component-subtle text-role-icon-muted transition-colors",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-border-focus",
         danger
-          ? "hover:bg-role-surface-action hover:text-role-foreground-on-inverse"
-          : "hover:bg-role-surface-component-hover hover:text-role-content-heading",
+          ? "hover:border-role-border-brand hover:bg-role-surface-action hover:text-role-foreground-on-inverse"
+          : "hover:border-role-border-hover hover:bg-role-surface-component-hover hover:text-role-content-heading",
         "[&_svg]:size-[13px]",
       )}
       {...rest}
@@ -310,7 +310,7 @@ export function OsWindow({
           // A top-lit gradient rather than a flat fill — the title bar is the
           // lip of the glass, and a solid band across it reads as a toolbar
           // bolted on rather than as part of the same pane.
-          "bg-gradient-to-b from-[rgba(255,255,255,0.05)] to-[rgba(255,255,255,0.015)]",
+          "bg-gradient-to-b from-[rgba(255,255,255,0.08)] to-[rgba(255,255,255,0.03)]",
           // No left padding: the leading slot sits flush against the window
           // edge so an app's sidebar divider can line up with it. The title
           // carries the padding instead.
@@ -330,6 +330,14 @@ export function OsWindow({
           data-os-window-no-drag
           className="flex shrink-0 items-center self-stretch"
         />
+        <span
+          aria-hidden
+          className="ml-xs flex shrink-0 items-center gap-[3px] text-role-content-placeholder"
+        >
+          <span className="size-1 rounded-full bg-current" />
+          <span className="size-1 rounded-full bg-current" />
+          <span className="size-1 rounded-full bg-current" />
+        </span>
         <h2
           className={cn(
             // `pl-xs`, not `pl-md`: the header's own `gap-xs` already sits

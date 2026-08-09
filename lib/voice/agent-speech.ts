@@ -3,39 +3,55 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The line the agent is currently saying.
+ * What the agent is saying, and whether it is still saying it.
  *
- * A store rather than component state because two surfaces show it — the
- * command bar's narration and the voice dots — and they must never disagree
- * about whether the agent is mid-sentence.
+ * Two consumers need this and neither is inside the chat tree:
  *
- * The mock agent (`lib/mock/agent.ts`) writes here as it narrates, so narration
- * and UI focus move together even without a speech pipeline: §5 of the concept
- * note asks for those to stay in sync, and text-only narration is still
- * narration.
+ * - The command bar shows the agent's narration while it drives.
+ * - The voice session needs to know when playback has really drained.
+ *
+ * Same external-store shape as the other desktop singletons, so every surface
+ * reads one copy and cannot disagree about whether the agent is mid-sentence.
  */
 
 export interface AgentSpeech {
-  /** What is being said right now. Empty when nothing is. */
+  /** The sentence currently being spoken, or "" when silent. */
   line: string;
+  /** True while audio is scheduled or playing. */
+  speaking: boolean;
+  /** Backward-compatible alias for existing local consumers. */
   isSpeaking: boolean;
 }
 
-let state: AgentSpeech = { line: "", isSpeaking: false };
+const SILENT: AgentSpeech = { line: "", speaking: false, isSpeaking: false };
+
+let state: AgentSpeech = SILENT;
 const listeners = new Set<() => void>();
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
-export function setSpokenLine(text: string): void {
-  state = { line: text, isSpeaking: text.length > 0 };
+function set(next: AgentSpeech): void {
+  if (
+    next.line === state.line &&
+    next.speaking === state.speaking &&
+    next.isSpeaking === state.isSpeaking
+  ) {
+    return;
+  }
+  state = next;
   emit();
 }
 
+export function setSpokenLine(text: string): void {
+  const line = text.trim();
+  if (!line) return;
+  set({ line, speaking: true, isSpeaking: true });
+}
+
 export function stoppedSpeaking(): void {
-  state = { line: "", isSpeaking: false };
-  emit();
+  set(SILENT);
 }
 
 export function getAgentSpeech(): AgentSpeech {
@@ -47,8 +63,6 @@ export function subscribeAgentSpeech(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-const SERVER_SPEECH: AgentSpeech = { line: "", isSpeaking: false };
-
 export function useAgentSpeech(): AgentSpeech {
-  return useSyncExternalStore(subscribeAgentSpeech, getAgentSpeech, () => SERVER_SPEECH);
+  return useSyncExternalStore(subscribeAgentSpeech, getAgentSpeech, () => SILENT);
 }

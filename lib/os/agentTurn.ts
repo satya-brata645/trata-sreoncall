@@ -41,6 +41,22 @@ export interface AgentTurnOptions {
    * the other.
    */
   voice?: boolean;
+  /**
+   * Hold the turn until a conversation exists to receive it.
+   *
+   * A turn from the command bar is typed into a surface that has already
+   * opened Chat, so it always lands. A turn from the wake word has not: the
+   * microphone is owned by the desktop, the only subscriber is the Chat
+   * window, and if that window is closed the utterance is dispatched into an
+   * empty room and silently lost — you say something, the dots move, and
+   * nothing ever happens.
+   *
+   * Opt-in rather than the default because a turn that arrives late is only
+   * right when it was spoken to no one in particular. Anything with a surface
+   * behind it should fail loudly instead of arriving somewhere unexpected
+   * later.
+   */
+  deferrable?: boolean;
 }
 
 export interface AgentTurnDetail {
@@ -48,12 +64,32 @@ export interface AgentTurnDetail {
   options: AgentTurnOptions;
 }
 
+/**
+ * How long a deferred turn is still worth delivering.
+ *
+ * Long enough to cover a window opening and mounting, short enough that a
+ * sentence spoken before lunch never arrives after it.
+ */
+export const DEFERRED_TURN_TTL_MS = 10_000;
+
+let subscriberCount = 0;
+let deferred: { detail: AgentTurnDetail; at: number } | null = null;
+
 /** Hand a turn to whichever conversation surface is listening. */
 export function dispatchAgentTurn(
   text: string,
   options: AgentTurnOptions = {},
 ): void {
   if (typeof window === "undefined") return;
+  if (!text.trim()) return;
+
+  if (options.deferrable && subscriberCount === 0) {
+    // Only the most recent one: two utterances queued behind a closed window
+    // would both arrive at once, in an order nobody chose.
+    deferred = { detail: { text, options }, at: Date.now() };
+    return;
+  }
+
   window.dispatchEvent(
     new CustomEvent<AgentTurnDetail>(AGENT_TURN_EVENT, {
       detail: { text, options },
@@ -79,5 +115,19 @@ export function subscribeAgentTurn(
     if (detail?.text) handler(detail.text, detail.options ?? {});
   };
   window.addEventListener(AGENT_TURN_EVENT, listener);
-  return () => window.removeEventListener(AGENT_TURN_EVENT, listener);
+  subscriberCount += 1;
+
+  // Drained, not replayed: cleared before delivery so a subscriber that
+  // remounts (Chat re-subscribes whenever its thread changes) cannot receive
+  // the same utterance twice.
+  const pending = deferred;
+  deferred = null;
+  if (pending && Date.now() - pending.at <= DEFERRED_TURN_TTL_MS) {
+    handler(pending.detail.text, pending.detail.options);
+  }
+
+  return () => {
+    subscriberCount = Math.max(0, subscriberCount - 1);
+    window.removeEventListener(AGENT_TURN_EVENT, listener);
+  };
 }
