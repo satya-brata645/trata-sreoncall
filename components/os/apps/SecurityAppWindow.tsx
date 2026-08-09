@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { FileText } from "lucide-react";
 
-import { cn, formatCompactRelativeTime, formatSize } from "@/lib/utils";
+import { formatSize } from "@/lib/utils";
 import { EmptyState, Icon, Row, SectionLabel, StatusDot } from "@/components/ui/primitives";
 import { useProjects, useSessionFiles } from "@/lib/hooks/useComplianceData";
 import { useBuilds, useSetCurrentBuild } from "@/lib/os/useBuilds";

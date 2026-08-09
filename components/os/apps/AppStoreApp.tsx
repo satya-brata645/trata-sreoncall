@@ -5,7 +5,7 @@ import { Check, Send } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { EmptyState, Icon, SectionLabel } from "@/components/ui/primitives";
-import { appGlyph } from "@/lib/os/appGlyphs";
+import { AppIcon } from "@/components/os/icons/AppIcon";
 import { useAppStoreCatalog } from "@/lib/hooks/useAppStore";
 import type { OsAppProps } from "@/lib/os/types";
 
@@ -95,15 +95,13 @@ function StoreRow({
   blurb: string;
   owned?: boolean;
 }) {
-  const glyph = appGlyph(id);
   return (
     <div className="flex items-start gap-sm rounded-sm px-2.5 py-2.5 hover:bg-role-surface-component-hover">
-      <span
-        style={{ color: glyph.tint }}
-        className="flex size-8 shrink-0 items-center justify-center rounded-xs bg-role-surface-component"
-      >
-        <Icon icon={glyph.icon} size={17} />
-      </span>
+      {/* A store row is a product listing, so it shows the product's own mark —
+          SREonCall's is its real logo. An app you are being asked to adopt and
+          one you already run should look like the same thing, because they are:
+          the store is the same library the Launchpad reads. */}
+      <AppIcon appId={id} name={name} description={blurb} size={38} className="mt-px" />
       <div className="min-w-0 flex-1">
         <p className="text-heading-xs font-semibold text-role-content-heading">{name}</p>
         <p className="text-body-xs text-role-content-muted">{blurb}</p>

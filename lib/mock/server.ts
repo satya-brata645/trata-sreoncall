@@ -33,7 +33,7 @@ function builds(appId: string) {
   return { app_id: appId, builds: list, latest_build: latest, current_build: latest };
 }
 
-export function handle<T>(path: string, options: { body?: unknown } = {}): Promise<T> {
+export function handle<T>(path: string, _options: { body?: unknown } = {}): Promise<T> {
   const [route, rawQuery] = path.split("?");
   const query = new URLSearchParams(rawQuery ?? "");
   const segments = route.split("/").filter(Boolean);

@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 
 import { cn, formatCompactRelativeTime } from "@/lib/utils";
 import { Icon, EmptyState } from "@/components/ui/primitives";
-import { appGlyph } from "@/lib/os/appGlyphs";
+import { AppIcon } from "@/components/os/icons/AppIcon";
 import { useProjects, useInfiniteSessionSummariesWithRunning } from "@/lib/hooks/useComplianceData";
 import { useWindowManager } from "@/lib/os/WindowManagerContext";
 import { SECURITY_APP_ID } from "@/lib/os/registry";
@@ -56,14 +56,16 @@ export function LaunchpadApp({ params, setParams }: OsAppProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-none items-center gap-2.5 border-b border-role-border-subtle px-md py-2.5">
-        <Icon icon={Search} className="text-role-icon-muted" />
-        <input
-          value={query}
-          onChange={(e) => setParams({ search: e.target.value })}
-          placeholder="Search apps"
-          className="min-w-0 flex-1 bg-transparent text-body-md text-role-content-heading outline-none placeholder:text-role-content-placeholder"
-        />
+      <div className="border-b border-role-border-subtle px-md py-2.5">
+        <div className="flex items-center gap-2 rounded-xs border border-role-border-default bg-role-surface-container-subtle px-3 py-2 focus-within:border-role-border-focus">
+          <Icon icon={Search} className="text-role-icon-muted" />
+          <input
+            value={query}
+            onChange={(e) => setParams({ search: e.target.value })}
+            placeholder="Search apps"
+            className="min-w-0 flex-1 bg-transparent text-body-md text-role-content-heading outline-none placeholder:text-role-content-placeholder"
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -84,7 +86,6 @@ export function LaunchpadApp({ params, setParams }: OsAppProps) {
         <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2.5 overflow-y-auto p-md">
           {apps.map((app) => {
             const fresh = freshness.get(app.id);
-            const glyph = appGlyph(app.id);
             return (
               <button
                 key={app.id}
@@ -98,12 +99,17 @@ export function LaunchpadApp({ params, setParams }: OsAppProps) {
                 className="flex flex-col gap-2 rounded-sm border border-role-border-subtle bg-role-surface-container-subtle p-3 text-left transition-colors hover:border-role-border hover:bg-role-surface-container"
               >
                 <div className="flex items-center gap-2.5">
-                  <span
-                    style={{ color: glyph.tint }}
-                    className="flex size-8 items-center justify-center rounded-xs bg-role-surface-component"
-                  >
-                    <Icon icon={glyph.icon} size={17} />
-                  </span>
+                  {/* The app's real icon, at the size the dock draws it. A grid
+                      of apps is the one place someone is choosing *which*, and
+                      a column of identical grey squares makes that a reading
+                      task rather than a glance. */}
+                  <AppIcon
+                    appId={app.id}
+                    name={app.name}
+                    description={app.description}
+                    tags={app.tags}
+                    size={34}
+                  />
                   <span className="truncate text-heading-xs font-semibold text-role-content-heading">
                     {app.name}
                   </span>

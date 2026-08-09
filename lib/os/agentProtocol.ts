@@ -30,25 +30,28 @@ import type { OsRect, OsSnapPreset } from "./geometry";
 // ---------------------------------------------------------------------------
 
 /**
- * What the agent may do without asking.
+ * What the agent may do without asking. Two modes, not three.
  *
  * Defined here rather than alongside the client store because the snapshot
  * carries it — the mode is part of what the agent is told about its own
  * situation, not merely a UI preference.
+ *
+ * An earlier design had a third, `auto`, where reaching inside an app stopped
+ * asking. It is gone deliberately rather than merely unused: the only verbs it
+ * changed are the two that alter what the user is looking *at*, so `auto` was
+ * precisely the mode in which the agent could change your work without you
+ * knowing. Collab already leaves window arrangement unasked, which is where the
+ * friction would otherwise have been. Nothing was left behind it to re-enable.
  */
-export type OsAgentMode = "self" | "collab" | "auto";
+export type OsAgentMode = "self" | "collab";
 
-export const OS_AGENT_MODES: readonly OsAgentMode[] = [
-  "self",
-  "collab",
-  "auto",
-] as const;
+export const OS_AGENT_MODES: readonly OsAgentMode[] = ["self", "collab"] as const;
 
 /** Safe default for a caller with no stored preference. */
 export const DEFAULT_AGENT_MODE: OsAgentMode = "collab";
 
 /** Rank, so an org ceiling can clamp a requested mode by comparison. */
-const MODE_RANK: Record<OsAgentMode, number> = { self: 0, collab: 1, auto: 2 };
+const MODE_RANK: Record<OsAgentMode, number> = { self: 0, collab: 1 };
 
 /**
  * The effective mode for a request: the caller's preference, never above the
@@ -122,43 +125,43 @@ export const VERB_TABLE: Readonly<Record<DesktopVerb, VerbSpec>> = {
   open_app: {
     verb: "open_app",
     verbClass: "set",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   focus: {
     verb: "focus",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   restore: {
     verb: "restore",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
 
   minimize: {
     verb: "minimize",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   snap: {
     verb: "snap",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   set_geometry: {
     verb: "set_geometry",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   pin_app: {
     verb: "pin_app",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
   unpin_app: {
     verb: "unpin_app",
     verbClass: "state",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
 
   // Changing which panel a window shows. A `state` verb: the window set is
@@ -176,13 +179,13 @@ export const VERB_TABLE: Readonly<Record<DesktopVerb, VerbSpec>> = {
     // changes what you are working *in*, not merely where the window sits —
     // and what a screen shows is what a person acts on. Window arrangement is
     // free; reaching inside is the thing worth interrupting for.
-    permissions: { self: "deny", collab: "ask", auto: "allow" },
+    permissions: { self: "deny", collab: "ask" },
   },
 
   focus_panel: {
     verb: "focus_panel",
     verbClass: "state",
-    permissions: { self: "deny", collab: "ask", auto: "allow" },
+    permissions: { self: "deny", collab: "ask" },
   },
 
   // Closing destroys in-flight work, which is why the dock's own click
@@ -193,17 +196,17 @@ export const VERB_TABLE: Readonly<Record<DesktopVerb, VerbSpec>> = {
   close_window: {
     verb: "close_window",
     verbClass: "set",
-    permissions: { self: "deny", collab: "allow", auto: "allow" },
+    permissions: { self: "deny", collab: "allow" },
   },
 
-  // The one verb refused in every mode, including Auto. Full screen hides the
+  // The one verb refused in every mode. Full screen hides the
   // dock *and* the menu bar — which is where the mode control lives. An agent
   // that full-screens a window has hidden the user's off-switch. `fill` gives
   // the same one-big-window result with the controls still reachable.
   full_screen: {
     verb: "full_screen",
     verbClass: "forbidden",
-    permissions: { self: "deny", collab: "deny", auto: "deny" },
+    permissions: { self: "deny", collab: "deny" },
     refusal:
       "Full screen is reserved for the user — it hides the menu bar and dock. Use snap with the 'fill' preset instead.",
   },

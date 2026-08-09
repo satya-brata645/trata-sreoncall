@@ -1,4 +1,4 @@
-import { OS_WINDOW_MIN_SIZE } from "./constants";
+import { OS_MENU_BAR_HEIGHT, OS_WINDOW_MIN_SIZE } from "./constants";
 
 /** A window rectangle in desktop-local px. */
 export interface OsRect {
@@ -18,6 +18,50 @@ export type OsResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 export interface OsBounds {
   width: number;
   height: number;
+}
+
+/**
+ * Default rectangle for a newly opened window.
+ *
+ * Large enough to be useful immediately, but deliberately not "fill the whole
+ * workspace": if a fresh window leaves no canvas visible around it, the
+ * desktop stops reading as a place you can arrange things and starts reading as
+ * a single-page app with ornamental chrome.
+ */
+export function openWindowRect(
+  bounds: OsBounds,
+  options: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    cascadeOffset: number;
+    widthRatio: number;
+    heightRatio: number;
+  },
+): OsRect {
+  const x = options.left + options.cascadeOffset;
+  const y = options.top + options.cascadeOffset;
+  const usableWidth = bounds.width - options.left - options.right;
+  const usableHeight = bounds.height - options.top - options.bottom;
+  const availableWidth = bounds.width - x - options.right;
+  const availableHeight = bounds.height - y - options.bottom;
+
+  const targetWidth = Math.round(usableWidth * options.widthRatio);
+  const targetHeight = Math.round(usableHeight * options.heightRatio);
+
+  return {
+    x,
+    y,
+    width: Math.max(
+      OS_WINDOW_MIN_SIZE.width,
+      Math.min(availableWidth, targetWidth),
+    ),
+    height: Math.max(
+      OS_WINDOW_MIN_SIZE.height,
+      Math.min(availableHeight, targetHeight),
+    ),
+  };
 }
 
 /**
@@ -54,7 +98,7 @@ export function resizeRect(
 
   // Keep every boundary on screen.
   left = Math.max(0, left);
-  top = Math.max(0, top);
+  top = Math.max(OS_MENU_BAR_HEIGHT, top);
   right = Math.min(bounds.width, right);
   bottom = Math.min(bounds.height, bottom);
 
@@ -159,10 +203,11 @@ export function moveRect(
   bounds: OsBounds,
 ): OsRect {
   const maxX = Math.max(0, bounds.width - OS_WINDOW_MIN_SIZE.width);
-  const maxY = Math.max(0, bounds.height - OS_WINDOW_MIN_SIZE.height);
+  const minY = OS_MENU_BAR_HEIGHT;
+  const maxY = Math.max(minY, bounds.height - OS_WINDOW_MIN_SIZE.height);
   return {
     ...start,
     x: Math.min(Math.max(0, start.x + dx), maxX),
-    y: Math.min(Math.max(0, start.y + dy), maxY),
+    y: Math.min(Math.max(minY, start.y + dy), maxY),
   };
 }

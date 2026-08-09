@@ -5,8 +5,7 @@ import ReactMarkdown from "react-markdown";
 import * as THREE from "three";
 import {
   Activity,
-  AlertTriangle,
-  ArrowLeft,
+    ArrowLeft,
   BrainCircuit,
   CheckCircle2,
   ChevronRight,
@@ -14,12 +13,17 @@ import {
   Cpu,
   GitBranch,
   Link2,
+  Minus,
+  Plus,
   Radar,
+  RotateCcw,
 } from "lucide-react";
 
-import { Icon, SectionLabel, StatusDot } from "@/components/ui/primitives";
+import { Icon, StatusDot } from "@/components/ui/primitives";
 import { cn, formatCompactRelativeTime } from "@/lib/utils";
+import { useAgentActivity } from "@/lib/hooks/useAgentActivity";
 import type { OsAppProps } from "@/lib/os/types";
+import { BrainConfig } from "./brain/BrainConfig";
 
 type Panel = "config" | "memory" | "cortex";
 type BrainView = "timeline" | "kanban";
@@ -62,8 +66,9 @@ type Agent = {
 type Hypothesis = {
   id: string;
   statement: string;
-  confidence: number;
-  evidence: string;
+  /** Absent when the SRE agent reported none. Never inferred here. */
+  confidence?: number;
+  evidence?: string;
   status: HypothesisState;
 };
 
@@ -164,6 +169,31 @@ type NodeInsight = {
   markdown: string;
   agents: string[];
 };
+
+type MemoryNodeDraft = {
+  label: string;
+  markdown: string;
+};
+
+type VaultNote = {
+  id: string;
+  title: string;
+  markdown: string;
+  linkedNodeIds: string[];
+  updatedAt: string;
+};
+
+type CustomSkillNode = {
+  id: string;
+  parentNodeId: string;
+  linkedNodeIds: string[];
+  updatedAt: string;
+};
+
+type MemoryRoute =
+  | { kind: "graph" }
+  | { kind: "node"; nodeId: string }
+  | { kind: "note"; noteId: string };
 
 const PANELS: Array<{ id: Panel; label: string }> = [
   { id: "config", label: "Config" },
@@ -785,21 +815,89 @@ const FACULTIES: BrainFaculty[] = [
   },
 ];
 
-const CONFIG_ROWS: Array<[string, string]> = [
-  ["Speak when", "It changes what I believe or what I do next"],
-  ["Loud on", "Production exposure, safety risk, prolonged customer impact"],
-  ["Quiet on", "Low-signal noise, staging churn, informational drift"],
-  ["Cadence", "Fast while uncertain, slower once the risk envelope narrows"],
-  ["May act alone", "Reachable production instability with a reversible fix path"],
-  ["Always ask", "Anything that changes data, access, or non-trivial spend"],
-];
-
-const STARFIELD = Array.from({ length: 72 }, (_, index) => ({
+const STARFIELD = Array.from({ length: 160 }, (_, index) => ({
   x: (index * 17.23 + (index % 5) * 9.7) % 100,
   y: (index * 11.91 + (index % 7) * 7.1) % 100,
-  r: 0.08 + (index % 4) * 0.05,
-  o: 0.12 + (index % 5) * 0.08,
+  r: 0.03 + (index % 5) * 0.018,
+  o: 0.08 + (index % 6) * 0.04,
 }));
+
+const FACULTY_LAYOUTS: Record<
+  BrainFaculty["id"],
+  {
+    x: number;
+    y: number;
+    z: number;
+    fanAngle: number;
+    fanSpan: number;
+    childRadius: number;
+    leafRadius: number;
+  }
+> = {
+  skillset: {
+    x: 34,
+    y: 28,
+    z: 7,
+    fanAngle: 232,
+    fanSpan: 92,
+    childRadius: 9.2,
+    leafRadius: 5.5,
+  },
+  knowledge: {
+    x: 54,
+    y: 26,
+    z: 10,
+    fanAngle: 280,
+    fanSpan: 72,
+    childRadius: 8.6,
+    leafRadius: 5.1,
+  },
+  perception: {
+    x: 76,
+    y: 52,
+    z: 13,
+    fanAngle: 18,
+    fanSpan: 116,
+    childRadius: 9.8,
+    leafRadius: 6.1,
+  },
+  reasoning: {
+    x: 71,
+    y: 30,
+    z: 12,
+    fanAngle: 330,
+    fanSpan: 96,
+    childRadius: 9.1,
+    leafRadius: 5.6,
+  },
+  tooling: {
+    x: 26,
+    y: 47,
+    z: 5,
+    fanAngle: 188,
+    fanSpan: 84,
+    childRadius: 7.8,
+    leafRadius: 5,
+  },
+  memory: {
+    x: 46,
+    y: 81,
+    z: 8,
+    fanAngle: 102,
+    fanSpan: 108,
+    childRadius: 10.2,
+    leafRadius: 6.2,
+  },
+  comms: {
+    x: 22,
+    y: 58,
+    z: 6,
+    fanAngle: 202,
+    fanSpan: 86,
+    childRadius: 8,
+    leafRadius: 5,
+  },
+};
 
 const GRAPH_ASSOCIATIONS: Array<[string, string]> = [
   ["metrics", "delta"],
@@ -896,6 +994,24 @@ const NODE_MARKDOWN_OVERRIDES: Record<string, string> = {
   ].join("\n"),
 };
 
+const INITIAL_VAULT_NOTES: VaultNote[] = [
+  {
+    id: "note-3117",
+    title: "INC-3117 incident notebook",
+    markdown: [
+      "## Incident notebook",
+      "",
+      "- correlate allocatable memory regression with pod OOM chronology",
+      "- keep rollback sequence attached to runbook evidence",
+      "- capture node-pool delta before mitigation hides the signal",
+    ].join("\n"),
+    linkedNodeIds: ["metrics", "rollback", "delta"],
+    updatedAt: new Date("2026-08-09T10:22:00+05:30").toISOString(),
+  },
+];
+
+const INITIAL_CUSTOM_SKILLS: CustomSkillNode[] = [];
+
 function polar(x: number, y: number, radius: number, angle: number) {
   const radians = (angle * Math.PI) / 180;
   return {
@@ -914,14 +1030,14 @@ function hexToRgba(hex: string, alpha: number) {
 }
 
 function nodeRadius(node: GraphNode) {
-  if (node.kind === "core") return 1.45;
-  if (node.kind === "faculty") return 0.52;
-  if (node.kind === "cluster") return 0.28;
-  return 0.18;
+  if (node.kind === "core") return 0.58;
+  if (node.kind === "faculty") return 0.21;
+  if (node.kind === "cluster") return 0.13;
+  return 0.09;
 }
 
 function worldPosition(node: GraphNode) {
-  return new THREE.Vector3((node.x - 50) * 0.18, (50 - node.y) * 0.18, node.z * 0.32);
+  return new THREE.Vector3((node.x - 50) * 0.24, (50 - node.y) * 0.24, node.z * 0.44);
 }
 
 function buildGraphModel(): GraphModel {
@@ -940,26 +1056,33 @@ function buildGraphModel(): GraphModel {
   const edges: GraphEdge[] = [];
 
   FACULTIES.forEach((faculty) => {
-    const facultyPoint = polar(50, 50, faculty.distance, faculty.angle);
+    const layout = FACULTY_LAYOUTS[faculty.id];
     const facultyNode: GraphNode = {
       id: faculty.id,
       label: faculty.label,
       kind: "faculty",
       color: faculty.color,
       activity: faculty.activity,
-      x: facultyPoint.x,
-      y: facultyPoint.y,
-      z: 18 + Math.sin((faculty.angle * Math.PI) / 180) * 4,
+      x: layout.x,
+      y: layout.y,
+      z: layout.z,
       parentId: "core",
     };
     nodes.push(facultyNode);
     edges.push({ from: "core", to: faculty.id, kind: "hierarchy" });
 
-    const childSpread = faculty.children.length > 1 ? 58 / (faculty.children.length - 1) : 0;
+    const childSpread =
+      faculty.children.length > 1 ? layout.fanSpan / (faculty.children.length - 1) : 0;
 
     faculty.children.forEach((child, index) => {
-      const childAngle = faculty.angle + (index - (faculty.children.length - 1) / 2) * childSpread;
-      const childPoint = polar(facultyPoint.x, facultyPoint.y, 10.5 + (index % 2) * 1.8, childAngle);
+      const childAngle =
+        layout.fanAngle + (index - (faculty.children.length - 1) / 2) * childSpread;
+      const childPoint = polar(
+        layout.x,
+        layout.y,
+        layout.childRadius + (index % 2) * 1.4,
+        childAngle,
+      );
       const childNode: GraphNode = {
         id: child.id,
         label: child.label,
@@ -968,19 +1091,24 @@ function buildGraphModel(): GraphModel {
         activity: child.activity,
         x: childPoint.x,
         y: childPoint.y,
-        z: facultyNode.z - 4 + (index % 2 === 0 ? 2.8 : -2.2),
+        z: layout.z + (index - 1.5) * 0.9 + (index % 2 === 0 ? 1.4 : -0.8),
         parentId: faculty.id,
       };
       nodes.push(childNode);
       edges.push({ from: faculty.id, to: child.id, kind: "hierarchy" });
 
-      const leafSpread = child.leaves.length > 1 ? 18 / (child.leaves.length - 1) : 0;
+      const leafSpread = child.leaves.length > 1 ? 16 / (child.leaves.length - 1) : 0;
       child.leaves.forEach((leaf, leafIndex) => {
         const leafAngle =
           childAngle +
           (leafIndex - (child.leaves.length - 1) / 2) * leafSpread +
-          (index % 2 === 0 ? -8 : 8);
-        const leafPoint = polar(childPoint.x, childPoint.y, 4.8 + leafIndex * 0.7, leafAngle);
+          (index % 2 === 0 ? -7 : 7);
+        const leafPoint = polar(
+          childPoint.x,
+          childPoint.y,
+          layout.leafRadius + leafIndex * 1.1 + (index % 3) * 0.25,
+          leafAngle,
+        );
         nodes.push({
           id: leaf.id,
           label: leaf.label,
@@ -989,7 +1117,7 @@ function buildGraphModel(): GraphModel {
           activity: leaf.activity,
           x: leafPoint.x,
           y: leafPoint.y,
-          z: childNode.z - 2.8 + leafIndex * 2.2,
+          z: childNode.z - 1.8 + leafIndex * 1.1 + (index % 2 === 0 ? 0.45 : -0.35),
           parentId: child.id,
         });
         edges.push({ from: child.id, to: leaf.id, kind: "hierarchy" });
@@ -1020,15 +1148,89 @@ function buildGraphModel(): GraphModel {
 
 const GRAPH_MODEL = buildGraphModel();
 
+function buildGraphModelWithDrafts(
+  nodeDrafts: Record<string, MemoryNodeDraft>,
+  customSkills: CustomSkillNode[],
+) {
+  const nodes = GRAPH_MODEL.nodes.map((node) => ({
+    ...node,
+    label: nodeDrafts[node.id]?.label?.trim() || node.label,
+  }));
+  const edges = [...GRAPH_MODEL.edges];
+  const baseNodeMap = new Map(nodes.map((node) => [node.id, node]));
+  const skillCountsByParent = new Map<string, number>();
+
+  customSkills.forEach((skill) => {
+    const parentNode = baseNodeMap.get(skill.parentNodeId);
+    if (!parentNode) return;
+
+    const siblingIndex = skillCountsByParent.get(parentNode.id) ?? 0;
+    skillCountsByParent.set(parentNode.id, siblingIndex + 1);
+
+    const parentAngle = (Math.atan2(parentNode.y - 50, parentNode.x - 50) * 180) / Math.PI;
+    const skillAngle = parentAngle + 18 + siblingIndex * 15;
+    const skillRadius =
+      parentNode.kind === "faculty" ? 9.4 : parentNode.kind === "cluster" ? 5.8 : 4.6;
+    const skillPoint = polar(
+      parentNode.x,
+      parentNode.y,
+      skillRadius + (siblingIndex % 2) * 0.6,
+      skillAngle,
+    );
+
+    const skillNode: GraphNode = {
+      id: skill.id,
+      label: nodeDrafts[skill.id]?.label?.trim() || "New Skill",
+      kind: "leaf",
+      color: parentNode.color,
+      activity: 0.72,
+      x: skillPoint.x,
+      y: skillPoint.y,
+      z: parentNode.z - 0.8 + siblingIndex * 0.22,
+      parentId: parentNode.id,
+    };
+
+    nodes.push(skillNode);
+    edges.push({ from: parentNode.id, to: skill.id, kind: "hierarchy" });
+    baseNodeMap.set(skill.id, skillNode);
+  });
+
+  customSkills.forEach((skill) => {
+    skill.linkedNodeIds
+      .filter((linkedNodeId) => linkedNodeId !== skill.parentNodeId && baseNodeMap.has(linkedNodeId))
+      .forEach((linkedNodeId) => {
+        edges.push({ from: skill.id, to: linkedNodeId, kind: "association" });
+      });
+  });
+
+  return {
+    nodes,
+    edges,
+    nodeMap: new Map(nodes.map((node) => [node.id, node])),
+    inbound: edges.reduce((map, edge) => {
+      const current = map.get(edge.to) ?? [];
+      current.push(edge.from);
+      map.set(edge.to, current);
+      return map;
+    }, new Map<string, string[]>()),
+    outbound: edges.reduce((map, edge) => {
+      const current = map.get(edge.from) ?? [];
+      current.push(edge.to);
+      map.set(edge.from, current);
+      return map;
+    }, new Map<string, string[]>()),
+  } satisfies GraphModel;
+}
+
 function getAgent(agentId: string) {
   return AGENTS.find((agent) => agent.id === agentId);
 }
 
-function getNodeAgents(nodeId: string) {
+function getNodeAgents(nodeId: string, graphModel: GraphModel = GRAPH_MODEL) {
   const direct = NODE_AGENT_FALLBACK[nodeId];
   if (direct) return direct;
 
-  const node = GRAPH_MODEL.nodeMap.get(nodeId);
+  const node = graphModel.nodeMap.get(nodeId);
   if (!node) return ["ATLAS"];
 
   if (node.parentId && NODE_AGENT_FALLBACK[node.parentId]) {
@@ -1038,8 +1240,12 @@ function getNodeAgents(nodeId: string) {
   return ["ATLAS"];
 }
 
-function buildNodeInsight(nodeId: string): NodeInsight {
-  const node = GRAPH_MODEL.nodeMap.get(nodeId);
+function buildNodeInsight(
+  nodeId: string,
+  graphModel: GraphModel = GRAPH_MODEL,
+  nodeDrafts: Record<string, MemoryNodeDraft> = {},
+): NodeInsight {
+  const node = graphModel.nodeMap.get(nodeId);
   if (!node) {
     return {
       status: "Unavailable",
@@ -1051,13 +1257,13 @@ function buildNodeInsight(nodeId: string): NodeInsight {
     };
   }
 
-  const inbound = (GRAPH_MODEL.inbound.get(nodeId) ?? [])
-    .map((id) => GRAPH_MODEL.nodeMap.get(id))
+  const inbound = (graphModel.inbound.get(nodeId) ?? [])
+    .map((id) => graphModel.nodeMap.get(id))
     .filter((value): value is GraphNode => Boolean(value));
-  const outbound = (GRAPH_MODEL.outbound.get(nodeId) ?? [])
-    .map((id) => GRAPH_MODEL.nodeMap.get(id))
+  const outbound = (graphModel.outbound.get(nodeId) ?? [])
+    .map((id) => graphModel.nodeMap.get(id))
     .filter((value): value is GraphNode => Boolean(value));
-  const agents = getNodeAgents(nodeId);
+  const agents = getNodeAgents(nodeId, graphModel);
   const leadAgent = getAgent(agents[0]);
   const status =
     node.activity > 0.9
@@ -1071,6 +1277,7 @@ function buildNodeInsight(nodeId: string): NodeInsight {
     NODE_SUMMARY_OVERRIDES[node.id] ??
     `${node.label} is part of the ${node.kind === "faculty" ? "faculty" : "incident knowledge"} path and is being consulted because it changes what the cortex should do next.`;
   const markdown =
+    nodeDrafts[node.id]?.markdown ??
     NODE_MARKDOWN_OVERRIDES[node.id] ??
     [
       `## ${node.label}`,
@@ -1121,7 +1328,10 @@ function buildNodeInsight(nodeId: string): NodeInsight {
   };
 }
 
-function getInspectorDetail(selection: InspectorSelection): InspectorDetail {
+function getInspectorDetail(
+  selection: InspectorSelection,
+  live: { hypotheses: Hypothesis[]; memory: WorkingMemoryEntry[] },
+): InspectorDetail {
   if (selection.kind === "agent") {
     const agent = getAgent(selection.id) ?? AGENTS[0];
     return {
@@ -1173,22 +1383,29 @@ function getInspectorDetail(selection: InspectorSelection): InspectorDetail {
   }
 
   if (selection.kind === "hypothesis") {
-    const hypothesis = HYPOTHESES.find((entry) => entry.id === selection.id) ?? HYPOTHESES[0];
+    const hypothesis = live.hypotheses.find((entry) => entry.id === selection.id) ?? live.hypotheses[0];
     return {
       title: "Hypothesis",
       subtitle: hypothesis.status,
-      status: `${Math.round(hypothesis.confidence * 100)}% confidence`,
+      status:
+        hypothesis.confidence === undefined
+          ? "confidence not reported"
+          : `${Math.round(hypothesis.confidence * 100)}% confidence`,
       tone: hypothesis.status === "leading" ? "emerald" : hypothesis.status === "active" ? "cyan" : "slate",
       summary: hypothesis.statement,
       thinking: [
         "This hypothesis stays alive only if it explains the first failure better than its alternatives.",
-        hypothesis.evidence,
+        hypothesis.evidence ?? "Nothing was cited for this one.",
         hypothesis.status === "leading"
           ? "The cortex is leaning here because the theory predicts the observed failure ordering."
           : "This remains in play, but it is not carrying the incident by itself.",
       ],
       logs: [
-        { at: "T+06m", label: "Evidence joined", text: hypothesis.evidence },
+        {
+          at: "T+06m",
+          label: "Evidence joined",
+          text: hypothesis.evidence ?? "No evidence was attached.",
+        },
         {
           at: "T+11m",
           label: "Weighting",
@@ -1205,7 +1422,7 @@ function getInspectorDetail(selection: InspectorSelection): InspectorDetail {
   if (selection.kind === "card") {
     const card = KANBAN.flatMap((stage) => stage.cards).find((entry) => entry.id === selection.id);
     const stage = KANBAN.find((entry) => entry.cards.some((cardEntry) => cardEntry.id === selection.id));
-    if (!card || !stage) return getInspectorDetail({ kind: "agent", id: "ATLAS" });
+    if (!card || !stage) return getInspectorDetail({ kind: "agent", id: "ATLAS" }, live);
     return {
       title: card.title,
       subtitle: `${stage.label} · ${card.owner}`,
@@ -1228,7 +1445,7 @@ function getInspectorDetail(selection: InspectorSelection): InspectorDetail {
   if (selection.kind === "task") {
     const row = TIMELINE.find((entry) => entry.tasks.some((task) => task.id === selection.id));
     const task = row?.tasks.find((entry) => entry.id === selection.id);
-    if (!row || !task) return getInspectorDetail({ kind: "agent", id: "ATLAS" });
+    if (!row || !task) return getInspectorDetail({ kind: "agent", id: "ATLAS" }, live);
     return {
       title: task.label,
       subtitle: `${row.agent} · ${row.role}`,
@@ -1252,7 +1469,7 @@ function getInspectorDetail(selection: InspectorSelection): InspectorDetail {
   }
 
   if (selection.kind === "memory") {
-    const entry = WORKING_MEMORY.find((item) => item.id === selection.id) ?? WORKING_MEMORY[0];
+    const entry = live.memory.find((item) => item.id === selection.id) ?? live.memory[0];
     return {
       title: entry.speaker,
       subtitle: entry.at,
@@ -1315,6 +1532,105 @@ function toneClasses(tone: InspectorDetail["tone"]) {
   return "border-white/10 bg-white/[0.05] text-white/72";
 }
 
+function createGlowTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 96;
+  canvas.height = 96;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return new THREE.Texture();
+  }
+
+  const gradient = context.createRadialGradient(48, 48, 0, 48, 48, 48);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.16, "rgba(255,255,255,0.96)");
+  gradient.addColorStop(0.44, "rgba(255,255,255,0.34)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 96, 96);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function getEdgeColors(edge: GraphEdge, from: GraphNode, to: GraphNode) {
+  if (edge.kind === "association") {
+    return {
+      from: new THREE.Color("#8fb8ff"),
+      to: new THREE.Color("#ff78bf"),
+      opacity: 0.38,
+    };
+  }
+
+  if (from.kind === "core") {
+    return {
+      from: new THREE.Color("#ffe6a3"),
+      to: new THREE.Color(to.color),
+      opacity: 0.56,
+    };
+  }
+
+  return {
+    from: new THREE.Color("#b5c7ff"),
+    to: new THREE.Color(to.color),
+    opacity: 0.52,
+  };
+}
+
+function createEdgeGeometry(from: GraphNode, to: GraphNode, kind: EdgeKind) {
+  const start = worldPosition(from);
+  const end = worldPosition(to);
+  const midpoint = start.clone().lerp(end, 0.5);
+  const distance = start.distanceTo(end);
+  const perpendicular = new THREE.Vector3(end.y - start.y, start.x - end.x, 0)
+    .normalize()
+    .multiplyScalar(kind === "association" ? 0.46 : 0.2);
+  midpoint.add(perpendicular);
+  midpoint.z += distance * (kind === "association" ? 0.12 : 0.06) + (kind === "association" ? 0.75 : 0.28);
+
+  const curve = new THREE.CatmullRomCurve3([start, midpoint, end], false, "centripetal");
+  return curve.getPoints(kind === "association" ? 22 : 12);
+}
+
+function glowScaleForNode(node: GraphNode) {
+  const radius = nodeRadius(node);
+  if (node.kind === "leaf") return radius * 8.5;
+  if (node.kind === "cluster") return radius * 10.5;
+  if (node.kind === "core") return radius * 12;
+  return radius * 14;
+}
+
+function glowOpacityForNode(node: GraphNode) {
+  if (node.kind === "leaf") return 0.24;
+  if (node.kind === "cluster") return 0.28;
+  if (node.kind === "core") return 0.42;
+  return 0.34;
+}
+
+function labelOpacityForNode(node: GraphNode) {
+  if (node.kind === "leaf") return 0.84;
+  if (node.kind === "cluster") return 0.9;
+  if (node.kind === "faculty") return 0.96;
+  return 1;
+}
+
+function labelSizeForNode(node: GraphNode) {
+  if (node.kind === "leaf") return 10;
+  if (node.kind === "cluster") return 11;
+  if (node.kind === "faculty") return 12;
+  return 13;
+}
+
+function getSkillParentNodeId(seedNodeId: string | undefined, graphModel: GraphModel) {
+  if (!seedNodeId) return "skillset";
+  const node = graphModel.nodeMap.get(seedNodeId);
+  if (!node) return "skillset";
+  if (node.kind === "faculty" || node.kind === "cluster") return node.id;
+  if (node.parentId) return node.parentId;
+  return "skillset";
+}
+
 export function BrainApp({ params, setParams }: OsAppProps) {
   const panel: Panel =
     params?.panel === "memory" || params?.panel === "cortex"
@@ -1341,43 +1657,177 @@ export function BrainApp({ params, setParams }: OsAppProps) {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-md">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {panel === "memory" && <Memory />}
         {panel === "cortex" && <Cortex />}
-        {panel === "config" && <Config />}
+        {panel === "config" && <BrainConfig />}
       </div>
     </div>
   );
 }
 
 function Memory() {
-  const [nodeStack, setNodeStack] = useState<string[]>([]);
-  const selectedNodeId = nodeStack.at(-1) ?? null;
+  const [routeStack, setRouteStack] = useState<MemoryRoute[]>([{ kind: "graph" }]);
+  const [nodeDrafts, setNodeDrafts] = useState<Record<string, MemoryNodeDraft>>({});
+  const [vaultNotes, setVaultNotes] = useState<VaultNote[]>(INITIAL_VAULT_NOTES);
+  const [customSkills, setCustomSkills] = useState<CustomSkillNode[]>(INITIAL_CUSTOM_SKILLS);
+  const activeRoute = routeStack.at(-1) ?? { kind: "graph" };
+  const graphModel = buildGraphModelWithDrafts(nodeDrafts, customSkills);
+
+  function pushRoute(next: MemoryRoute) {
+    setRouteStack((current) => [...current, next]);
+  }
 
   function openNode(nodeId: string) {
-    setNodeStack((current) => [...current, nodeId]);
+    pushRoute({ kind: "node", nodeId });
   }
 
   function followNodeLink(nodeId: string) {
-    setNodeStack((current) => (current.at(-1) === nodeId ? current : [...current, nodeId]));
+    setRouteStack((current) => {
+      const top = current.at(-1);
+      if (top?.kind === "node" && top.nodeId === nodeId) return current;
+      return [...current, { kind: "node", nodeId }];
+    });
   }
 
-  function backFromNode() {
-    setNodeStack((current) => current.slice(0, -1));
+  function openNote(noteId: string) {
+    setRouteStack((current) => {
+      const top = current.at(-1);
+      if (top?.kind === "note" && top.noteId === noteId) return current;
+      return [...current, { kind: "note", noteId }];
+    });
+  }
+
+  function backFromMemory() {
+    setRouteStack((current) => (current.length > 1 ? current.slice(0, -1) : current));
+  }
+
+  function createNote(linkedNodeIds: string[] = []) {
+    const id = `note-${Date.now()}`;
+    const note: VaultNote = {
+      id,
+      title: linkedNodeIds.length
+        ? `${graphModel.nodeMap.get(linkedNodeIds[0])?.label ?? "Brain"} note`
+        : "New memory note",
+      markdown: [
+        "## Working note",
+        "",
+        linkedNodeIds.length
+          ? `Linked to ${linkedNodeIds
+              .map((nodeId) => graphModel.nodeMap.get(nodeId)?.label ?? nodeId)
+              .join(", ")}`
+          : "Capture a new durable memory, hypothesis branch, or operator note here.",
+      ].join("\n"),
+      linkedNodeIds,
+      updatedAt: new Date().toISOString(),
+    };
+    setVaultNotes((current) => [note, ...current]);
+    pushRoute({ kind: "note", noteId: id });
+  }
+
+  function createSkill(linkedNodeId?: string) {
+    const id = `skill-${Date.now()}`;
+    const parentNodeId = getSkillParentNodeId(linkedNodeId, graphModel);
+    const linkedNodeIds = linkedNodeId ? [linkedNodeId] : [parentNodeId];
+
+    setCustomSkills((current) => [
+      {
+        id,
+        parentNodeId,
+        linkedNodeIds,
+        updatedAt: new Date().toISOString(),
+      },
+      ...current,
+    ]);
+    setNodeDrafts((current) => ({
+      ...current,
+      [id]: {
+        label: "New Skill",
+        markdown: [
+          "## New skill",
+          "",
+          "Describe the capability, operational use, and the graph node it extends.",
+          "",
+          `Backlinked node: ${graphModel.nodeMap.get(linkedNodeIds[0])?.label ?? linkedNodeIds[0]}`,
+        ].join("\n"),
+      },
+    }));
+    pushRoute({ kind: "node", nodeId: id });
+  }
+
+  function saveNodeDraft(nodeId: string, updates: Partial<MemoryNodeDraft>) {
+    const currentNode = graphModel.nodeMap.get(nodeId);
+    if (!currentNode || currentNode.kind === "core") return;
+    const baseInsight = buildNodeInsight(nodeId, graphModel, nodeDrafts);
+
+    setNodeDrafts((current) => ({
+      ...current,
+      [nodeId]: {
+        label: updates.label ?? current[nodeId]?.label ?? currentNode.label,
+        markdown: updates.markdown ?? current[nodeId]?.markdown ?? baseInsight.markdown,
+      },
+    }));
+  }
+
+  function saveVaultNote(noteId: string, updates: Partial<VaultNote>) {
+    setVaultNotes((current) =>
+      current.map((note) =>
+        note.id === noteId
+          ? {
+              ...note,
+              ...updates,
+              updatedAt: new Date().toISOString(),
+            }
+          : note,
+      ),
+    );
   }
 
   return (
-    <div className="min-h-full bg-role-surface-page px-3 py-3">
-      <div className="rounded-[28px] border border-role-border-subtle bg-role-surface-container-subtle p-3 shadow-[0_20px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
-        {selectedNodeId ? (
-          <NodeDetailView
-            nodeId={selectedNodeId}
-            onBack={backFromNode}
-            onSelectNode={followNodeLink}
-            backLabel="Back to memory"
-          />
+    <div className="flex h-full flex-col overflow-hidden bg-role-surface-page px-3 py-3">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-[28px] border border-role-border-subtle bg-role-surface-container-subtle p-3 shadow-[0_20px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
+        {activeRoute.kind === "node" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <NodeDetailView
+              nodeId={activeRoute.nodeId}
+              graphModel={graphModel}
+              nodeDrafts={nodeDrafts}
+              vaultNotes={vaultNotes}
+              customSkills={customSkills}
+              onBack={backFromMemory}
+              onSelectNode={followNodeLink}
+              onOpenNote={openNote}
+              onCreateNote={createNote}
+              onCreateSkill={createSkill}
+              onSaveNodeDraft={saveNodeDraft}
+              backLabel="Back to memory"
+            />
+          </div>
+        ) : activeRoute.kind === "note" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <VaultNoteView
+              note={vaultNotes.find((entry) => entry.id === activeRoute.noteId) ?? vaultNotes[0]}
+              graphModel={graphModel}
+              onBack={backFromMemory}
+              onOpenNode={followNodeLink}
+              onSave={saveVaultNote}
+              backLabel="Back to memory"
+            />
+          </div>
         ) : (
-          <KnowledgeGraphView onOpenNode={openNode} selection={null} minimal />
+          <div className="min-h-0 flex-1">
+            <KnowledgeGraphView
+              graphModel={graphModel}
+              vaultNotes={vaultNotes}
+              customSkills={customSkills}
+              onOpenNode={openNode}
+              onOpenNote={openNote}
+              onCreateNote={() => createNote()}
+              onCreateSkill={() => createSkill()}
+              selection={null}
+              minimal
+            />
+          </div>
         )}
       </div>
     </div>
@@ -1387,6 +1837,21 @@ function Memory() {
 function Cortex() {
   const [view, setView] = useState<BrainView>("timeline");
   const [selection, setSelection] = useState<InspectorSelection | null>(null);
+
+  /**
+   * What the SRE agent has actually reported.
+   *
+   * Until something has been, the fixtures stand in — they are the demo's
+   * backstory and worth keeping. What stops the two being mistaken for each
+   * other is that every live field traces to an event id, and a field the
+   * events did not carry renders as absent rather than as a plausible number.
+   */
+  const activity = useAgentActivity();
+  const incident = activity.incident ?? INCIDENT;
+  const hypotheses: Hypothesis[] =
+    activity.hypotheses.length > 0 ? activity.hypotheses : HYPOTHESES;
+  const workingMemory: WorkingMemoryEntry[] =
+    activity.workingMemory.length > 0 ? activity.workingMemory : WORKING_MEMORY;
   const activeDetail = selection;
 
   return (
@@ -1403,20 +1868,22 @@ function Cortex() {
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-role-content-muted">
               <span>AI SRE Brain</span>
               <span className="h-px w-8 bg-role-border-subtle" />
-              <span>{INCIDENT.id}</span>
+              <span>{incident.id}</span>
             </div>
             <h2 className="text-heading-lg font-semibold leading-tight text-role-content-heading">
-              {INCIDENT.title}
+              {incident.title}
             </h2>
             <div className="flex flex-wrap items-center gap-2 text-body-xs text-role-content-subtle">
               <span className="rounded-full border border-role-status-critical-border-hover bg-role-status-critical-subtle px-2 py-0.5 uppercase tracking-[0.18em] text-role-status-critical-foreground">
-                {INCIDENT.severity}
+                {incident.severity}
               </span>
               <span className="rounded-full border border-role-info-border-hover bg-role-info-subtle px-2 py-0.5 uppercase tracking-[0.18em] text-role-info-foreground">
-                {INCIDENT.status}
+                {incident.status}
               </span>
-              <span>{Math.round(INCIDENT.confidence * 100)}% confidence</span>
-              <span>Started {formatCompactRelativeTime(INCIDENT.startedAt)}</span>
+              {incident.confidence === undefined ? null : (
+                <span>{Math.round(incident.confidence * 100)}% confidence</span>
+              )}
+              <span>Started {formatCompactRelativeTime(incident.startedAt)}</span>
             </div>
           </div>
 
@@ -1426,7 +1893,7 @@ function Cortex() {
         <div className="rounded-[28px] border border-role-border-subtle bg-role-surface-container-subtle p-3 shadow-[0_20px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
           {activeDetail ? (
             <MainDetailView
-              detail={getInspectorDetail(activeDetail)}
+              detail={getInspectorDetail(activeDetail, { hypotheses, memory: workingMemory })}
               onBack={() => setSelection(null)}
             />
           ) : (
@@ -1437,13 +1904,13 @@ function Cortex() {
                     <div className="text-[10px] uppercase tracking-[0.2em] text-role-content-muted">
                       Incident summary
                     </div>
-                    <p className="mt-2 text-body-sm leading-6 text-role-content-body">{INCIDENT.summary}</p>
+                    <p className="mt-2 text-body-sm leading-6 text-role-content-body">{incident.summary}</p>
                   </div>
                   <div className="max-w-sm rounded-2xl border border-role-border-subtle bg-role-surface-component-subtle p-3">
                     <div className="text-[10px] uppercase tracking-[0.2em] text-role-content-muted">
                       Next decisive move
                     </div>
-                    <p className="mt-2 text-body-sm text-role-content-heading">{INCIDENT.nextAction}</p>
+                    <p className="mt-2 text-body-sm text-role-content-heading">{incident.nextAction}</p>
                   </div>
                 </div>
               </div>
@@ -1457,7 +1924,7 @@ function Cortex() {
               <div className="grid gap-4 xl:grid-cols-2">
                 <OverviewPanel icon={BrainCircuit} kicker="Hypotheses" title="Incident model">
                   <div className="space-y-3">
-                    {HYPOTHESES.map((hypothesis) => (
+                    {hypotheses.map((hypothesis) => (
                       <button
                         key={hypothesis.id}
                         type="button"
@@ -1527,7 +1994,7 @@ function Cortex() {
 
                 <OverviewPanel icon={Activity} kicker="Working memory" title="Live thought stream">
                   <div className="space-y-3">
-                    {WORKING_MEMORY.map((entry) => (
+                    {workingMemory.map((entry) => (
                       <button
                         key={entry.id}
                         type="button"
@@ -1630,31 +2097,6 @@ function Cortex() {
         }
       `}</style>
     </div>
-  );
-}
-
-function Config() {
-  return (
-    <>
-      <SectionLabel>The contract</SectionLabel>
-      <div className="flex flex-col px-2.5">
-        {CONFIG_ROWS.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex items-baseline gap-md border-b border-role-border-subtle px-2.5 py-2.5 last:border-b-0"
-          >
-            <span className="w-[120px] shrink-0 text-body-sm text-role-content-muted">
-              {label}
-            </span>
-            <span className="text-body-md text-role-content-heading">{value}</span>
-          </div>
-        ))}
-      </div>
-      <p className="px-5 pt-md text-body-xs text-role-content-muted">
-        The gate is materiality, not severity. An engineer does not report that nothing
-        happened, but does report that the risk envelope changed.
-      </p>
-    </>
   );
 }
 
@@ -1833,124 +2275,197 @@ function MainDetailView({
 }
 
 function KnowledgeGraphView({
+  graphModel,
+  vaultNotes,
+  customSkills,
   onOpenNode,
+  onOpenNote,
+  onCreateNote,
+  onCreateSkill,
   selection,
   minimal = false,
 }: {
+  graphModel: GraphModel;
+  vaultNotes: VaultNote[];
+  customSkills: CustomSkillNode[];
   onOpenNode: (nodeId: string) => void;
+  onOpenNote: (noteId: string) => void;
+  onCreateNote: () => void;
+  onCreateSkill: () => void;
   selection: string | null;
   minimal?: boolean;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const labelLayerRef = useRef<HTMLDivElement>(null);
+  const zoomDistanceRef = useRef(17.5);
+  const zoomTargetRef = useRef(17.5);
+  const rotationXRef = useRef(0.08);
+  const rotationYRef = useRef(-0.18);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    const initialWidth = Math.max(mount.clientWidth, 640);
+    const initialHeight = Math.max(mount.clientHeight, 620);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(mount.clientWidth, mount.clientHeight);
+    renderer.setSize(initialWidth, initialHeight);
     renderer.setClearColor(0x05050b, 1);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      42,
-      mount.clientWidth / mount.clientHeight,
+      34,
+      initialWidth / initialHeight,
       0.1,
-      200,
+      240,
     );
-    camera.position.set(0, 0, 19);
+    camera.position.set(0, 0.2, zoomDistanceRef.current);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.76);
-    const key = new THREE.PointLight(0xffffff, 1.35, 120);
-    key.position.set(0, 0, 16);
-    const rim = new THREE.PointLight(0x7a5af8, 0.55, 80);
-    rim.position.set(-8, 6, 12);
-    scene.add(ambient, key, rim);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+    const key = new THREE.PointLight(0xc5dbff, 1.35, 160);
+    key.position.set(2, 4, 20);
+    const rim = new THREE.PointLight(0xff9ad1, 0.48, 120);
+    rim.position.set(-16, -3, 14);
+    const gold = new THREE.PointLight(0xffde8a, 0.34, 100);
+    gold.position.set(8, -10, 12);
+    scene.add(ambient, key, rim, gold);
 
     const root = new THREE.Group();
     scene.add(root);
+    const glowTexture = createGlowTexture();
+    const labelElements = new Map<string, HTMLDivElement>();
+    labelLayerRef.current?.querySelectorAll<HTMLDivElement>("[data-node-label]").forEach((element) => {
+      if (element.dataset.nodeLabel) {
+        labelElements.set(element.dataset.nodeLabel, element);
+      }
+    });
 
     const starPositions = new Float32Array(STARFIELD.length * 3);
+    const starColors = new Float32Array(STARFIELD.length * 3);
     STARFIELD.forEach((star, index) => {
-      starPositions[index * 3] = (star.x - 50) * 0.26;
+      starPositions[index * 3] = (star.x - 50) * 0.34;
       starPositions[index * 3 + 1] = (50 - star.y) * 0.26;
-      starPositions[index * 3 + 2] = -8 - (index % 7) * 1.2;
+      starPositions[index * 3 + 2] = -10 - (index % 9) * 1.1;
+      const starColor = new THREE.Color(index % 11 === 0 ? "#6ad9ff" : "#ffffff");
+      starColors[index * 3] = starColor.r;
+      starColors[index * 3 + 1] = starColor.g;
+      starColors[index * 3 + 2] = starColor.b;
     });
     const starGeometry = new THREE.BufferGeometry();
     starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
     const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.08,
+      size: 0.055,
       transparent: true,
-      opacity: 0.58,
+      opacity: 0.72,
+      vertexColors: true,
       depthWrite: false,
+      blending: THREE.AdditiveBlending,
     });
     const stars = new THREE.Points(starGeometry, starMaterial);
     root.add(stars);
 
-    const interactive: Array<{ mesh: THREE.Mesh; node: GraphNode }> = [];
+    const interactive: Array<{ mesh: THREE.Object3D; node: GraphNode; glow: THREE.Sprite }> = [];
 
-    GRAPH_MODEL.edges.forEach((edge) => {
-      const from = GRAPH_MODEL.nodeMap.get(edge.from);
-      const to = GRAPH_MODEL.nodeMap.get(edge.to);
+    graphModel.edges.forEach((edge) => {
+      const from = graphModel.nodeMap.get(edge.from);
+      const to = graphModel.nodeMap.get(edge.to);
       if (!from || !to) return;
-      const points = [worldPosition(from), worldPosition(to)];
+      const points = createEdgeGeometry(from, to, edge.kind);
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const colors = new Float32Array(points.length * 3);
+      const edgeColors = getEdgeColors(edge, from, to);
+      points.forEach((_, index) => {
+        const color = edgeColors.from.clone().lerp(edgeColors.to, index / (points.length - 1));
+        colors[index * 3] = color.r;
+        colors[index * 3 + 1] = color.g;
+        colors[index * 3 + 2] = color.b;
+      });
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
       const material = new THREE.LineBasicMaterial({
-        color: new THREE.Color(to.color),
+        vertexColors: true,
         transparent: true,
-        opacity: edge.kind === "association" ? 0.28 : 0.54,
+        opacity: edgeColors.opacity,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
       });
       const line = new THREE.Line(geometry, material);
       root.add(line);
+
+      const shimmer = new THREE.Line(
+        geometry.clone(),
+        new THREE.LineBasicMaterial({
+          color: edgeColors.to,
+          transparent: true,
+          opacity: edge.kind === "association" ? 0.08 : 0.05,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      root.add(shimmer);
     });
 
-    GRAPH_MODEL.nodes.forEach((node) => {
+    graphModel.nodes.forEach((node) => {
       const position = worldPosition(node);
       const radius = nodeRadius(node);
-      const geometry = new THREE.SphereGeometry(radius, 18, 18);
+      const geometry = new THREE.SphereGeometry(
+        radius,
+        node.kind === "leaf" ? 8 : 12,
+        node.kind === "leaf" ? 8 : 12,
+      );
       const isCore = node.kind === "core";
       const material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(isCore ? "#ffffff" : node.color),
-        emissive: new THREE.Color(isCore ? "#7a5af8" : node.color),
-        emissiveIntensity: isCore ? 0.5 : 0.22 + node.activity * 0.1,
-        roughness: 0.34,
-        metalness: 0.08,
+        color: new THREE.Color(isCore ? "#fff8dc" : "#6ad9ff"),
+        emissive: new THREE.Color(isCore ? "#ffe29a" : "#78d9ff"),
+        emissiveIntensity: isCore ? 1.25 : 0.58 + node.activity * 0.24,
+        roughness: 0.18,
+        metalness: 0.04,
         transparent: true,
-        opacity: isCore ? 0.96 : 0.9,
+        opacity: isCore ? 0.98 : 0.94,
       });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.copy(position);
       mesh.userData = { nodeId: node.id, baseScale: 1 };
       root.add(mesh);
-      interactive.push({ mesh, node });
-
-      if (isCore || node.kind === "faculty") {
-        const haloGeometry = new THREE.SphereGeometry(radius * (isCore ? 2.2 : 1.7), 18, 18);
-        const haloMaterial = new THREE.MeshBasicMaterial({
-          color: new THREE.Color(isCore ? "#7a5af8" : node.color),
-          transparent: true,
-          opacity: isCore ? 0.08 : 0.05,
-          depthWrite: false,
-        });
-        const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-        halo.position.copy(position);
-        root.add(halo);
-      }
+      const glowMaterial = new THREE.SpriteMaterial({
+        map: glowTexture,
+        color: new THREE.Color(isCore ? "#ffe09b" : node.color),
+        transparent: true,
+        opacity:
+          node.kind === "leaf"
+            ? 0.24
+            : node.kind === "cluster"
+              ? 0.28
+              : isCore
+                ? 0.42
+                : 0.34,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const glow = new THREE.Sprite(glowMaterial);
+      glow.position.copy(position);
+      glow.scale.setScalar(glowScaleForNode(node));
+      root.add(glow);
+      interactive.push({ mesh, node, glow });
     });
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    const worldPoint = new THREE.Vector3();
     let hoveredId: string | null = null;
     let frameId = 0;
     let dragActive = false;
+    let dragMoved = false;
     let lastX = 0;
     let lastY = 0;
-    let manualRotationX = 0.14;
-    let manualRotationY = 0;
-    let cameraDistance = 19;
+    let manualRotationX = rotationXRef.current;
+    let manualRotationY = rotationYRef.current;
 
     const setPointerFromEvent = (event: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -1961,7 +2476,10 @@ function KnowledgeGraphView({
     const onPointerMove = (event: PointerEvent) => {
       setPointerFromEvent(event);
       raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(interactive.map((entry) => entry.mesh), false);
+      const hits = raycaster.intersectObjects(
+        interactive.map((entry) => entry.mesh),
+        false,
+      );
       const nextHover =
         hits.length > 0 ? String(hits[0].object.userData.nodeId ?? "") || null : null;
       hoveredId = nextHover;
@@ -1971,11 +2489,12 @@ function KnowledgeGraphView({
     };
 
     const onClick = () => {
-      if (hoveredId) onOpenNode(hoveredId);
+      if (!dragMoved && hoveredId) onOpenNode(hoveredId);
     };
 
     const onPointerDown = (event: PointerEvent) => {
       dragActive = true;
+      dragMoved = false;
       lastX = event.clientX;
       lastY = event.clientY;
       renderer.domElement.style.cursor = "grabbing";
@@ -1992,14 +2511,22 @@ function KnowledgeGraphView({
       const deltaY = event.clientY - lastY;
       lastX = event.clientX;
       lastY = event.clientY;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 2) {
+        dragMoved = true;
+      }
       manualRotationY += deltaX * 0.005;
-      manualRotationX = THREE.MathUtils.clamp(manualRotationX + deltaY * 0.0025, -0.18, 0.42);
+      manualRotationX = THREE.MathUtils.clamp(manualRotationX + deltaY * 0.0024, -0.22, 0.36);
+      rotationXRef.current = manualRotationX;
+      rotationYRef.current = manualRotationY;
     };
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      cameraDistance = THREE.MathUtils.clamp(cameraDistance + event.deltaY * 0.008, 12, 28);
-      camera.position.z = cameraDistance;
+      zoomTargetRef.current = THREE.MathUtils.clamp(
+        zoomTargetRef.current + event.deltaY * 0.008,
+        11.5,
+        24,
+      );
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -2020,16 +2547,56 @@ function KnowledgeGraphView({
     renderer.domElement.style.cursor = "grab";
 
     const animate = (time: number) => {
-      root.rotation.x = manualRotationX + Math.cos(time * 0.00012) * 0.012;
-      root.rotation.y = manualRotationY + Math.sin(time * 0.00018) * 0.08;
-      root.rotation.z = Math.sin(time * 0.00007) * 0.035;
+      zoomDistanceRef.current = THREE.MathUtils.lerp(
+        zoomDistanceRef.current,
+        zoomTargetRef.current,
+        0.14,
+      );
+      manualRotationX = THREE.MathUtils.lerp(manualRotationX, rotationXRef.current, 0.16);
+      manualRotationY = THREE.MathUtils.lerp(manualRotationY, rotationYRef.current, 0.16);
+      camera.position.z = zoomDistanceRef.current;
+      root.rotation.x = manualRotationX + Math.cos(time * 0.00011) * 0.01;
+      root.rotation.y = manualRotationY + Math.sin(time * 0.00017) * 0.04;
+      root.rotation.z = Math.sin(time * 0.00006) * 0.018;
 
-      interactive.forEach(({ mesh, node }) => {
+      interactive.forEach(({ mesh, node, glow }) => {
         const active = hoveredId === node.id || selection === node.id;
-        const pulse = 1 + Math.sin(time * 0.0012 + node.activity * 5) * 0.06 * node.activity;
-        const scale = active ? pulse * 1.2 : pulse;
+        const pulse =
+          1 + Math.sin(time * 0.0012 + node.activity * 5 + node.z * 0.12) * 0.06 * node.activity;
+        const scale = active ? pulse * 1.26 : pulse;
         mesh.scale.setScalar(scale);
+        glow.scale.setScalar(glowScaleForNode(node) * (active ? 1.16 : 1));
+        const glowMaterial = glow.material as THREE.SpriteMaterial;
+        glowMaterial.opacity =
+          glowOpacityForNode(node) +
+          Math.sin(time * 0.001 + node.activity * 3) * 0.02 +
+          (active ? 0.08 : 0);
       });
+
+      if (labelElements.size) {
+        interactive.forEach(({ mesh, node }) => {
+          const label = labelElements.get(node.id);
+          if (!label) return;
+
+          mesh.getWorldPosition(worldPoint);
+          worldPoint.project(camera);
+
+          const x = (worldPoint.x * 0.5 + 0.5) * mount.clientWidth;
+          const y = (-worldPoint.y * 0.5 + 0.5) * mount.clientHeight;
+          const isVisible =
+            worldPoint.z < 1 &&
+            x >= -80 &&
+            x <= mount.clientWidth + 80 &&
+            y >= -30 &&
+            y <= mount.clientHeight + 30;
+          const active = hoveredId === node.id || selection === node.id;
+
+          label.style.opacity = isVisible
+            ? String(Math.min(1, labelOpacityForNode(node) + (active ? 0.24 : 0)))
+            : "0";
+          label.style.transform = `translate3d(${x}px, ${y + 10}px, 0) translate(-50%, -50%) scale(${active ? 1.06 : 1})`;
+        });
+      }
 
       renderer.render(scene, camera);
       frameId = window.requestAnimationFrame(animate);
@@ -2060,14 +2627,118 @@ function KnowledgeGraphView({
       });
       starGeometry.dispose();
       starMaterial.dispose();
+      glowTexture.dispose();
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
-  }, [minimal, onOpenNode, selection]);
+  }, [graphModel, minimal, onOpenNode, selection]);
+
+  function adjustZoom(delta: number) {
+    zoomTargetRef.current = THREE.MathUtils.clamp(zoomTargetRef.current + delta, 11.5, 24);
+  }
+
+  function resetView() {
+    zoomTargetRef.current = 17.5;
+    zoomDistanceRef.current = 17.5;
+    rotationXRef.current = 0.08;
+    rotationYRef.current = -0.18;
+  }
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-role-border-subtle bg-[#05050b]">
-      <div ref={mountRef} className="relative aspect-[1.12/1] min-h-[560px]" />
+    <div className="relative flex h-full min-h-[620px] w-full overflow-hidden rounded-[24px] border border-role-border-subtle bg-[#05050b]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(46,85,138,0.12),transparent_26%),radial-gradient(circle_at_48%_54%,rgba(255,210,130,0.1),transparent_18%),radial-gradient(circle_at_18%_12%,rgba(106,217,255,0.08),transparent_24%),linear-gradient(180deg,#030308_0%,#04040a_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(1,2,7,0.62)_100%)]" />
+      <div ref={mountRef} className="relative min-h-0 flex-1" />
+      <div ref={labelLayerRef} className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+        {graphModel.nodes.map((node) => (
+          <div
+            key={node.id}
+            data-node-label={node.id}
+            className="absolute left-0 top-0 whitespace-nowrap rounded-full border border-white/8 bg-black/62 px-2 py-0.5 text-center font-medium tracking-[0.02em] text-cyan-50 transition-[opacity,transform] duration-150 ease-out"
+            style={{
+              fontSize: `${labelSizeForNode(node)}px`,
+              textShadow:
+                node.kind === "core"
+                  ? "0 0 14px rgba(255,226,154,0.65)"
+                  : "0 0 12px rgba(106,217,255,0.4)",
+            }}
+          >
+            {node.label}
+          </div>
+        ))}
+      </div>
+      <div className="absolute left-4 top-4 z-20 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => adjustZoom(-1.5)}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/22 bg-black/78 text-cyan-50 shadow-[0_0_30px_rgba(106,217,255,0.24)] backdrop-blur-md transition-colors hover:bg-black/88"
+          aria-label="Zoom in"
+        >
+          <Icon icon={Plus} size={19} />
+        </button>
+        <button
+          type="button"
+          onClick={() => adjustZoom(1.5)}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/22 bg-black/78 text-cyan-50 shadow-[0_0_30px_rgba(106,217,255,0.24)] backdrop-blur-md transition-colors hover:bg-black/88"
+          aria-label="Zoom out"
+        >
+          <Icon icon={Minus} size={19} />
+        </button>
+        <button
+          type="button"
+          onClick={resetView}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/14 bg-white/10 text-white shadow-[0_0_22px_rgba(255,255,255,0.08)] backdrop-blur-md transition-colors hover:bg-white/16"
+          aria-label="Reset graph view"
+        >
+          <Icon icon={RotateCcw} size={17} />
+        </button>
+      </div>
+      <div className="absolute right-4 top-4 z-20 flex max-w-[420px] flex-col items-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCreateSkill}
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-300/18 bg-black/78 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-emerald-100 shadow-[0_0_24px_rgba(52,211,153,0.18)] backdrop-blur-md transition-colors hover:bg-black/88"
+          >
+            <Icon icon={Plus} size={14} />
+            New skill
+          </button>
+          <button
+            type="button"
+            onClick={onCreateNote}
+            className="inline-flex items-center gap-2 rounded-full border border-cyan-300/18 bg-black/78 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-cyan-50 shadow-[0_0_24px_rgba(106,217,255,0.18)] backdrop-blur-md transition-colors hover:bg-black/88"
+          >
+            <Icon icon={Plus} size={14} />
+            New page
+          </button>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          {customSkills.slice(0, 4).map((skill) => {
+            const skillNode = graphModel.nodeMap.get(skill.id);
+            if (!skillNode) return null;
+            return (
+              <button
+                key={skill.id}
+                type="button"
+                onClick={() => onOpenNode(skill.id)}
+                className="rounded-full border border-emerald-300/12 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-100/90 backdrop-blur-md transition-colors hover:bg-black/78 hover:text-emerald-50"
+              >
+                {skillNode.label}
+              </button>
+            );
+          })}
+          {vaultNotes.slice(0, 4).map((note) => (
+            <button
+              key={note.id}
+              type="button"
+              onClick={() => onOpenNote(note.id)}
+              className="rounded-full border border-white/10 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white/78 backdrop-blur-md transition-colors hover:bg-black/78 hover:text-white"
+            >
+              {note.title}
+            </button>
+          ))}
+        </div>
+      </div>
       {!minimal && (
         <>
           <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2">
@@ -2097,27 +2768,53 @@ function KnowledgeGraphView({
 
 function NodeDetailView({
   nodeId,
+  graphModel,
+  nodeDrafts,
+  vaultNotes,
+  customSkills,
   onBack,
   onSelectNode,
+  onOpenNote,
+  onCreateNote,
+  onCreateSkill,
+  onSaveNodeDraft,
   backLabel = "Back to brain",
 }: {
   nodeId: string;
+  graphModel: GraphModel;
+  nodeDrafts: Record<string, MemoryNodeDraft>;
+  vaultNotes: VaultNote[];
+  customSkills: CustomSkillNode[];
   onBack: () => void;
   onSelectNode: (nodeId: string) => void;
+  onOpenNote: (noteId: string) => void;
+  onCreateNote: (linkedNodeIds?: string[]) => void;
+  onCreateSkill: (linkedNodeId?: string) => void;
+  onSaveNodeDraft: (nodeId: string, updates: Partial<MemoryNodeDraft>) => void;
   backLabel?: string;
 }) {
-  const node = GRAPH_MODEL.nodeMap.get(nodeId);
-  const insight = buildNodeInsight(nodeId);
-  const inboundIds = GRAPH_MODEL.inbound.get(nodeId) ?? [];
-  const outboundIds = GRAPH_MODEL.outbound.get(nodeId) ?? [];
+  const node = graphModel.nodeMap.get(nodeId);
+  const insight = buildNodeInsight(nodeId, graphModel, nodeDrafts);
+  const inboundIds = graphModel.inbound.get(nodeId) ?? [];
+  const outboundIds = graphModel.outbound.get(nodeId) ?? [];
   const inboundNodes = inboundIds
-    .map((id) => GRAPH_MODEL.nodeMap.get(id))
+    .map((id) => graphModel.nodeMap.get(id))
     .filter((entry): entry is GraphNode => Boolean(entry));
   const outboundNodes = outboundIds
-    .map((id) => GRAPH_MODEL.nodeMap.get(id))
+    .map((id) => graphModel.nodeMap.get(id))
+    .filter((entry): entry is GraphNode => Boolean(entry));
+  const linkedNotes = vaultNotes.filter((note) => note.linkedNodeIds.includes(nodeId));
+  const linkedSkillNodes = customSkills
+    .filter((skill) => skill.linkedNodeIds.includes(nodeId))
+    .map((skill) => graphModel.nodeMap.get(skill.id))
     .filter((entry): entry is GraphNode => Boolean(entry));
 
   if (!node) return null;
+
+  const editable = node.kind !== "core";
+  const draft = nodeDrafts[nodeId];
+  const markdownValue = draft?.markdown ?? insight.markdown;
+  const labelValue = draft?.label ?? node.label;
 
   return (
     <div className="rounded-[24px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
@@ -2138,6 +2835,24 @@ function NodeDetailView({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {editable && (
+            <>
+              <button
+                type="button"
+                onClick={() => onCreateSkill(nodeId)}
+                className="rounded-full border border-emerald-300/18 bg-emerald-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-emerald-100 transition-colors hover:bg-emerald-300/16"
+              >
+                New linked skill
+              </button>
+              <button
+                type="button"
+                onClick={() => onCreateNote([nodeId])}
+                className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-cyan-100 transition-colors hover:bg-cyan-300/16"
+              >
+                New linked page
+              </button>
+            </>
+          )}
           <span
             className="rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-role-content-heading"
             style={{
@@ -2160,12 +2875,84 @@ function NodeDetailView({
             <ChevronRight className="h-3 w-3" strokeWidth={1.6} />
             <span>{node.label}</span>
           </div>
-          <div className="prose prose-invert mt-4 max-w-none text-body-sm leading-7 prose-headings:text-[var(--color-role-text-content-heading)] prose-p:text-[var(--color-role-text-content-body)] prose-strong:text-[var(--color-role-text-content-heading)] prose-li:text-[var(--color-role-text-content-body)] prose-code:text-[var(--color-role-info-foreground)]">
-            <ReactMarkdown>{insight.markdown}</ReactMarkdown>
+
+          {editable && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">
+                  Editable name
+                </div>
+                <input
+                  value={labelValue}
+                  onChange={(event) => onSaveNodeDraft(nodeId, { label: event.target.value })}
+                  className="mt-2 w-full rounded-2xl border border-role-border-subtle bg-role-surface-component-subtle px-3 py-2 text-body-sm text-role-content-heading outline-none transition-colors focus:border-role-info-border-hover"
+                />
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">
+                  Markdown editor
+                </div>
+                <textarea
+                  value={markdownValue}
+                  onChange={(event) => onSaveNodeDraft(nodeId, { markdown: event.target.value })}
+                  className="mt-2 min-h-[240px] w-full rounded-[22px] border border-role-border-subtle bg-role-surface-component-subtle px-3 py-3 font-mono text-[13px] leading-6 text-role-content-body outline-none transition-colors focus:border-role-info-border-hover"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">
+              Preview
+            </div>
+            <div className="prose prose-invert mt-3 max-w-none text-body-sm leading-7 prose-headings:text-[var(--color-role-text-content-heading)] prose-p:text-[var(--color-role-text-content-body)] prose-strong:text-[var(--color-role-text-content-heading)] prose-li:text-[var(--color-role-text-content-body)] prose-code:text-[var(--color-role-info-foreground)]">
+              <ReactMarkdown>{markdownValue}</ReactMarkdown>
+            </div>
           </div>
         </div>
 
         <div className="space-y-4">
+          <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Backlinked skills</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {linkedSkillNodes.length ? (
+                linkedSkillNodes.map((skillNode) => (
+                  <button
+                    key={skillNode.id}
+                    type="button"
+                    onClick={() => onSelectNode(skillNode.id)}
+                    className="rounded-full border border-role-border-subtle bg-role-surface-component-subtle px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-role-content-body transition-colors hover:bg-role-surface-component-hover hover:text-role-content-heading"
+                  >
+                    {skillNode.label}
+                  </button>
+                ))
+              ) : (
+                <span className="text-body-xs text-role-content-muted">No linked skills yet.</span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Linked notes</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {linkedNotes.length ? (
+                linkedNotes.map((note) => (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => onOpenNote(note.id)}
+                    className="rounded-full border border-role-border-subtle bg-role-surface-component-subtle px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-role-content-body transition-colors hover:bg-role-surface-component-hover hover:text-role-content-heading"
+                  >
+                    {note.title}
+                  </button>
+                ))
+              ) : (
+                <span className="text-body-xs text-role-content-muted">No linked notes yet.</span>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-role-content-muted">
               <Icon icon={Cpu} size={13} />
@@ -2250,6 +3037,104 @@ function NodeDetailView({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VaultNoteView({
+  note,
+  graphModel,
+  onBack,
+  onOpenNode,
+  onSave,
+  backLabel = "Back to memory",
+}: {
+  note: VaultNote;
+  graphModel: GraphModel;
+  onBack: () => void;
+  onOpenNode: (nodeId: string) => void;
+  onSave: (noteId: string, updates: Partial<VaultNote>) => void;
+  backLabel?: string;
+}) {
+  const linkedNodes = note.linkedNodeIds
+    .map((nodeId) => graphModel.nodeMap.get(nodeId))
+    .filter((entry): entry is GraphNode => Boolean(entry));
+
+  return (
+    <div className="rounded-[24px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-role-border-subtle pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 rounded-full border border-role-border-subtle bg-role-surface-component-subtle px-3 py-1.5 text-body-xs text-role-content-body transition-colors hover:bg-role-surface-component-hover hover:text-role-content-heading"
+          >
+            <Icon icon={ArrowLeft} size={13} />
+            {backLabel}
+          </button>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-role-content-muted">Vault note</div>
+            <h3 className="mt-1 text-heading-md font-semibold text-role-content-heading">{note.title}</h3>
+          </div>
+        </div>
+
+        <span className="rounded-full border border-role-border-subtle bg-role-surface-component-subtle px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-role-content-subtle">
+          updated {formatCompactRelativeTime(note.updatedAt)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_300px]">
+        <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Obsidian-style note</div>
+          <input
+            value={note.title}
+            onChange={(event) => onSave(note.id, { title: event.target.value })}
+            className="mt-3 w-full rounded-2xl border border-role-border-subtle bg-role-surface-component-subtle px-3 py-2 text-body-sm text-role-content-heading outline-none transition-colors focus:border-role-info-border-hover"
+          />
+          <textarea
+            value={note.markdown}
+            onChange={(event) => onSave(note.id, { markdown: event.target.value })}
+            className="mt-3 min-h-[320px] w-full rounded-[22px] border border-role-border-subtle bg-role-surface-component-subtle px-3 py-3 font-mono text-[13px] leading-6 text-role-content-body outline-none transition-colors focus:border-role-info-border-hover"
+          />
+
+          <div className="mt-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Preview</div>
+            <div className="prose prose-invert mt-3 max-w-none text-body-sm leading-7 prose-headings:text-[var(--color-role-text-content-heading)] prose-p:text-[var(--color-role-text-content-body)] prose-strong:text-[var(--color-role-text-content-heading)] prose-li:text-[var(--color-role-text-content-body)] prose-code:text-[var(--color-role-info-foreground)]">
+              <ReactMarkdown>{note.markdown}</ReactMarkdown>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Linked graph nodes</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {linkedNodes.length ? (
+                linkedNodes.map((node) => (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() => onOpenNode(node.id)}
+                    className="rounded-full border border-role-border-subtle bg-role-surface-component-subtle px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-role-content-body transition-colors hover:bg-role-surface-component-hover hover:text-role-content-heading"
+                  >
+                    {node.label}
+                  </button>
+                ))
+              ) : (
+                <span className="text-body-xs text-role-content-muted">No graph links attached.</span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-role-border-subtle bg-role-surface-container-subtle p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-role-content-muted">Why this exists</div>
+            <p className="mt-3 text-body-xs leading-6 text-role-content-body">
+              This note vault is the durable memory layer. Use it like an Obsidian page: write markdown,
+              keep operator context, and jump back into the graph through linked nodes.
+            </p>
           </div>
         </div>
       </div>

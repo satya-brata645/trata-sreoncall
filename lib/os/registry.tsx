@@ -1,5 +1,14 @@
 import { Archive, Brain, LayoutGrid, MessageSquare, Store } from "lucide-react";
 
+import {
+  AppStoreArtwork,
+  BrainArtwork,
+  ChatArtwork,
+  FilesArtwork,
+  GenericAppArtwork,
+  LaunchpadArtwork,
+} from "@/components/os/icons/AppArtwork";
+
 import { AppStoreApp } from "@/components/os/apps/AppStoreApp";
 import { BrainApp } from "@/components/os/apps/BrainApp";
 import { ChatApp } from "@/components/os/apps/ChatApp";
@@ -32,6 +41,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: "chat",
     title: "Chat",
     icon: MessageSquare,
+    artwork: ChatArtwork,
     component: ChatApp,
     // Chat keeps its own thread list, so a second chat window would be
     // redundant — launching again focuses the existing one.
@@ -70,6 +80,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: "apps",
     title: "Apps",
     icon: LayoutGrid,
+    artwork: LaunchpadArtwork,
     component: LaunchpadApp,
     // One Launchpad is enough — it is a launcher, not a document.
     singleton: true,
@@ -88,6 +99,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: "app-store",
     title: "App Store",
     icon: Store,
+    artwork: AppStoreArtwork,
     component: AppStoreApp,
     panels: [
       {
@@ -110,6 +122,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: "files",
     title: "Files",
     icon: Archive,
+    artwork: FilesArtwork,
     component: FilesApp,
     singleton: true,
     // One control for the whole address, not one per segment. Files is the only
@@ -137,6 +150,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: "brain",
     title: "Brain",
     icon: Brain,
+    artwork: BrainArtwork,
     component: BrainApp,
     singleton: true,
     panels: [
@@ -161,6 +175,7 @@ export const OS_APPS: readonly OsAppDefinition[] = [
     id: SECURITY_APP_ID,
     title: "App",
     icon: LayoutGrid,
+    artwork: GenericAppArtwork,
     component: SecurityAppWindow,
     // Opened from the Launchpad with an `appId` param, never launched cold, so
     // it gets no dock tile. Not a singleton: several apps can be open side by

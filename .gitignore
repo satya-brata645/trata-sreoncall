@@ -16,3 +16,4 @@ AGENTS.md
 CLAUDE.md
 # Internal design-system review artefacts. This remote is public.
 *.zip
+.data/

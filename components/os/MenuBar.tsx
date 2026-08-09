@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ALockup } from "@/components/brand/ALogo";
 import { Check, ChevronDown, Info, Lock, Mic, MicOff } from "lucide-react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
@@ -10,6 +10,7 @@ import { OS_DOCK_Z, OS_MENU_BAR_HEIGHT } from "@/lib/os/constants";
 import { useAgentMode } from "@/lib/os/agentMode";
 import { useAgentPolicy } from "@/lib/hooks/useAgentPolicy";
 import { useAmbientListening } from "@/lib/os/ambientListening";
+import { isMicMuted, subscribeMicMuted } from "@/lib/voice/mic-session";
 import { useDesktopController } from "@/lib/os/DesktopControllerContext";
 import { useWindowManager } from "@/lib/os/WindowManagerContext";
 import { OS_AGENT_MODES, type OsAgentMode } from "@/lib/os/agentProtocol";
@@ -19,10 +20,10 @@ import { AgentStatusChip } from "./AgentStatusChip";
  * What each mode means, in the control itself.
  *
  * Written here rather than in a doc because a consent control that does not say
- * what it consents to is not consent. **Auto's line names the assumption it
- * makes** — that what is on screen can be trusted — which is the single most
- * important thing a user choosing it needs to know, and the thing they will
- * never go and read a threat model to find out.
+ * what it consents to is not consent. **Collab's line names where the boundary
+ * sits** — arranging windows is free, reaching inside an app asks — which is
+ * the thing a user will otherwise infer wrongly from the first time it moves a
+ * window without stopping, and never go and read a threat model to correct.
  */
 const MODE_COPY: Record<OsAgentMode, { label: string; detail: string }> = {
   self: {
@@ -31,20 +32,19 @@ const MODE_COPY: Record<OsAgentMode, { label: string; detail: string }> = {
   },
   collab: {
     label: "Collab",
-    detail: "The agent can open and show things, and asks before moving anything.",
-  },
-  auto: {
-    label: "Auto",
+    // Says where the line actually is. The old wording — "asks before moving
+    // anything" — described a product that does not exist and would have made
+    // every window arrangement look like a bug when it did not stop to ask.
     detail:
-      "The agent acts without asking. Assumes you trust what your apps display — content from scans and uploads can carry instructions.",
+      "The agent opens and arranges windows freely, and asks before changing what you are looking at inside an app.",
   },
 };
 
 function ModeMenu() {
   // Reads the workspace ceiling and publishes it into the mode store. Without
   // this the lock icon and the "your organization limits…" notice below are
-  // unreachable code, and the selector offers Auto to members whose next
-  // request the server will silently clamp back to Collab.
+  // unreachable code, and the selector offers a mode the server will silently
+  // clamp back on the very next request.
   useAgentPolicy();
   const { mode, preference, ceiling, setPreference, isClamped, isAvailable } =
     useAgentMode();
@@ -150,7 +150,7 @@ function ModeMenu() {
             );
           })}
 
-          {ceiling !== "auto" && (
+          {ceiling !== "collab" && (
             <p className="border-t border-role-border-subtle px-2xs pb-2xs pt-xs text-body-xs text-role-content-muted">
               Your organization limits agent control to{" "}
               <strong className="font-medium">{MODE_COPY[ceiling].label}</strong>. An
@@ -177,7 +177,13 @@ function ModeMenu() {
  */
 function MicToggle({ live }: { live: boolean }) {
   const { enabled, toggle } = useAmbientListening();
-  const Icon = enabled ? Mic : MicOff;
+  // The preference can be on while the microphone is shut: the command bar
+  // holds it muted for push-to-talk whenever the agent surface is up. Saying
+  // "Mic on" through that is the control disagreeing with itself, which is the
+  // one thing this component was built not to do.
+  const muted = useSyncExternalStore(subscribeMicMuted, isMicMuted, () => true);
+  const open = enabled && !muted;
+  const Icon = open ? Mic : MicOff;
 
   return (
     <button
@@ -186,28 +192,35 @@ function MicToggle({ live }: { live: boolean }) {
       aria-pressed={enabled}
       aria-label={
         enabled
-          ? "Listening for “hey SOS”. Click to stop."
+          ? open
+            ? "Listening for “hey SOS”. Click to stop."
+            : "Listening for “hey SOS” is on, but the microphone is held closed. Click to stop."
           : "Listen for “hey SOS”. Opens your microphone."
       }
       title={
         enabled
-          ? "Listening for “hey SOS” — your microphone is open and streaming. Click to stop."
+          ? open
+            ? "Listening for “hey SOS” — your microphone is open and streaming. Click to stop."
+            : "Listening for “hey SOS” is on, but something is holding the microphone closed — hold Space in the command bar to talk. Click to stop."
           : "Listen for “hey SOS”. This opens your microphone and streams audio while it is on."
       }
       className={cn(
         "inline-flex h-[30px] items-center gap-2 rounded-xs border px-2.5",
         "text-body-sm font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-border-focus",
-        enabled
+        open
           ? // Continuous audio to a third party is not something to signal with
             // a subtle tint: it gets a colour, a word and a pulse, so it cannot
             // be mistaken for decoration or missed at a glance.
             "border-role-status-medium-border-hover bg-role-status-medium-subtle text-role-status-medium-foreground"
-          : "border-role-border-default bg-role-surface-component text-role-icon-muted hover:bg-role-surface-component-hover hover:text-role-content-heading",
+          : // On but held closed reads as neither: the preference is still on,
+            // so the word stays, but nothing is being captured and the amber
+            // would be claiming otherwise.
+            "border-role-border-default bg-role-surface-component text-role-icon-muted hover:bg-role-surface-component-hover hover:text-role-content-heading",
       )}
     >
-      <Icon size={15} strokeWidth={1.5} absoluteStrokeWidth className={cn(live && "animate-dos-pulse")} aria-hidden />
-      {enabled && "Mic on"}
+      <Icon size={15} strokeWidth={1.5} absoluteStrokeWidth className={cn(live && open && "animate-dos-pulse")} aria-hidden />
+      {enabled && (open ? "Mic on" : "Mic held")}
     </button>
   );
 }

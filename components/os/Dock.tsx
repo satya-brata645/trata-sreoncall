@@ -51,14 +51,16 @@ function SecurityDockItem({
   onSelect: () => void;
   menu: DockItemMenu;
 }) {
-  // The same symbol *and* tint the Launchpad tile uses, so an app looks
-  // identical wherever it appears — and visibly unlike the OS's own apps, which
-  // stay monochrome.
-  const { icon, tint } = appGlyph(app.id);
+  // The same icon the Launchpad and the store show, so an app is one object
+  // wherever it appears. SREonCall's tile is its real logo, not a stand-in
+  // symbol: it is the one app here that exists outside this workspace, and
+  // giving it a generic glyph would quietly demote it to a fixture.
+  const { artwork, icon, tint } = appGlyph(app.id);
   return (
     <DockItem
       title={app.name}
       icon={icon}
+      artwork={artwork}
       tint={tint}
       isOpen={isOpen}
       onSelect={onSelect}
@@ -266,12 +268,17 @@ export function Dock() {
         )}
       >
         {/* 1 — the OS's own apps. Always present, never reorderable, no pin
-            affordance: they are the product, not a preference. */}
+            affordance: they are the product, not a preference. Each is drawn
+            rather than glyphed, the way Finder and Launchpad are: these five
+            are the surfaces someone reaches for a hundred times a day, and a
+            column of identical grey squares makes every one of those reaches a
+            reading task. */}
         {OS_APPS.filter((app) => app.showInDock !== false).map((app) => (
           <DockItem
             key={app.id}
             title={app.title}
             icon={app.icon}
+            artwork={app.artwork}
             isOpen={isAppOpen(app.id)}
             onSelect={() => toggleApp(app.id)}
             menu={{

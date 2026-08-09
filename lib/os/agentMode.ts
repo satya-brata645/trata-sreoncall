@@ -45,7 +45,10 @@ const STORAGE_PREFIX = "sos:agent:mode";
 const EMPTY: ModeState = {
   scope: null,
   preference: DEFAULT_AGENT_MODE,
-  ceiling: "auto",
+  // The most permissive mode there is, which is what an unset ceiling means —
+  // "nothing has been restricted", not "everything has been allowed". With two
+  // modes those coincide; the clamp is still what decides.
+  ceiling: "collab",
 };
 
 let current: ModeState = EMPTY;

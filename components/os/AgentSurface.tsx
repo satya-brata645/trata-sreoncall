@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 import { useAgentSummon } from "@/lib/os/AgentSummonContext";
 import { useDesktopController } from "@/lib/os/DesktopControllerContext";
@@ -8,6 +8,9 @@ import { useWindowManager } from "@/lib/os/WindowManagerContext";
 import { dispatchAgentTurn } from "@/lib/os/agentTurn";
 import { useAmbientAgent } from "@/lib/os/useAmbientAgent";
 import { useAgentSpeech } from "@/lib/voice/agent-speech";
+import { isMicMuted, subscribeMicMuted } from "@/lib/voice/mic-session";
+import { getPendingApproval, subscribePendingApproval } from "@/lib/voice/pending-approval";
+import { useProactiveSpeech } from "@/lib/voice/proactive-speech";
 import type { AmbientAgentState } from "@/lib/os/useAmbientAgent";
 import { MenuBar } from "./MenuBar";
 import { AuroraOverlay } from "./AuroraOverlay";
@@ -57,17 +60,21 @@ function narrationFor(
   ambient: AmbientAgentState,
   spokenLine: string,
   summonReason: string | null,
+  question: string | null,
 ): string | null {
   switch (ambient.mode) {
     case "speaking":
-      // The agent's own words — the narration this bar exists to show.
+      // The agent's own words — the narration this bar exists to show. They
+      // outrank a notice: what is being said now is more current than what
+      // went wrong before it.
       return spokenLine || null;
     case "awake":
-      // Nothing here: the transcript now goes into the field itself (as its
-      // placeholder, where the words would have appeared had you typed them)
-      // and the dots already say the mic is open. Returning `heard` as well
-      // would print the same sentence twice, one line apart.
-      return null;
+      // Nothing of our own here: the transcript goes into the field itself (as
+      // its placeholder, where the words would have appeared had you typed
+      // them) and the dots already say the mic is open. Returning `heard` as
+      // well would print the same sentence twice, one line apart. A notice is
+      // the exception — it is the reason the last thing you said went nowhere.
+      return ambient.notice;
     case "thinking":
       return "Working on it…";
     case "confirming":
@@ -76,12 +83,17 @@ function narrationFor(
       // looking needs to be able to glance up and see what they are agreeing
       // to — and because a mic that is open for an answer must visibly be
       // open for an answer, not look like ordinary listening.
-      return ambient.heard || "Waiting on you — say yes or no.";
+      //
+      // The question itself, not a placeholder about there being one: it is
+      // the same sentence the agent just spoke, so someone who missed it can
+      // read it rather than ask for it again.
+      return ambient.heard || question || "Waiting on you — say yes or no.";
     case "ambient":
     case "idle":
-      // Nothing of ours to say; the agent's reason for summoning itself, if
-      // that is why the bar is up.
-      return summonReason;
+      // A failure the user needs to know about outranks the agent's reason for
+      // being here: a bar that says why it appeared, over a microphone that was
+      // refused, explains the wrong thing.
+      return ambient.notice ?? summonReason;
   }
 }
 
@@ -97,6 +109,19 @@ export function AgentSurface() {
   // What the agent is currently saying, published by the playback queue as it
   // schedules each chunk's audio.
   const speech = useAgentSpeech();
+  const muted = useSyncExternalStore(subscribeMicMuted, isMicMuted, () => true);
+  // The decision the agent is waiting on, if it is waiting on one.
+  const pendingApproval = useSyncExternalStore(
+    subscribePendingApproval,
+    getPendingApproval,
+    () => null,
+  );
+
+  // The standing loop decides, server-side, that something is worth saying. It
+  // is heard here rather than in Chat because a wake-up that only reaches an
+  // open Chat window is a wake-up that goes unheard exactly when someone is
+  // away from it — which is the case the whole loop exists for.
+  useProactiveSpeech({ mode: ambient.mode, muted });
 
   const handleSubmit = useCallback(
     (text: string) => {
@@ -137,6 +162,10 @@ export function AgentSurface() {
           // Only steal the caret when the user asked for the bar. If the agent
           // raised it, they were mid-something and it is not ours to interrupt.
           autoFocus={summon.origin === "hotkey" || summon.origin === "voice"}
+          // The wake word already opened the microphone and the instruction is
+          // still being spoken; the bar must not mute it out from under the
+          // session that raised it.
+          spokenSummons={summon.origin === "voice"}
           voiceState={dotsStateFor(ambient.mode)}
           transcript={ambient.heard}
           // Derived from the session's **mode**, not from which strings happen
@@ -144,7 +173,12 @@ export function AgentSurface() {
           // finished answer sit on the bar forever: a stale non-empty string
           // wins a `||` chain, and nothing was resetting it. A mode always
           // knows what it is, and leaving a mode clears what belonged to it.
-          narration={narrationFor(ambient, speech.line, summon.reason)}
+          narration={narrationFor(
+            ambient,
+            speech.line,
+            summon.reason,
+            pendingApproval?.spoken ?? null,
+          )}
           isDriving={controller?.isDriving ?? false}
           onSubmit={handleSubmit}
           onDismiss={summon.dismiss}
