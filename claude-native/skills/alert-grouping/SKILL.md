@@ -69,9 +69,17 @@ without writing the file has no effect and does not count):
   "revisions": [
     { "at": "<ISO-8601>", "action": "MERGE|RESEVERITY|SPLIT|RESOLVE", "previously_believed": "...", "new_evidence": "...", "now_believes": "...", "why_changed": "..." }
   ],
-  "escalation": { "observed": "...", "ruled_out": "...", "could_not_determine": "...", "needs_from_human": "..." }
+  "escalation": { "observed": "...", "ruled_out": "...", "could_not_determine": "...", "needs_from_human": "..." },
+  "rca_ref": "rca/rca-NNN.md",
+  "remediation_ref": "remediation/remediation-NNN.json",
+  "pr_url": "https://github.com/... or null",
+  "postmortem_ref": "postmortems/postmortem-NNN.md"
 }
 ```
+
+The last four fields are written by the later shift's skills, not by you — leave them absent
+and they will be filled in. They are how the coordinator knows which incidents still need
+root-causing and remediating, so never strip one you find already set.
 
 **`$OUTPUT_DIR/incident-picture.md`** — rewrite this file completely every run (max 40 lines,
 bullets not prose). This is the progressive-disclosure headline layer a human reads first:
@@ -93,5 +101,13 @@ real `reasoning` field, not a restated action name.
 ## Related skills
 
 - `../log-triage/SKILL.md` — runs before this, always.
-- `../self-skilling/SKILL.md` — the coordinator invokes this after you RESOLVE an incident,
-  not you directly.
+- `../root-cause/SKILL.md` — runs after you, on every incident you declare or materially
+  revise. You establish *what* is failing; it establishes *where the fault starts*.
+- `../remediation/SKILL.md` — runs after root-cause, and may open a real draft PR.
+- `../postmortem/SKILL.md` and `../self-skilling/SKILL.md` — the coordinator invokes these,
+  in that order, after you `RESOLVE` an incident. Not you directly.
+
+Note that your `RESOLVE` is what triggers both of them, so it carries more weight than it
+used to: `MERGE` and `SPLIT` also leave an incident looking closed, but neither is a recovery
+and neither should produce a postmortem. Use `RESOLVE` only for actual recovery you have
+evidence for, and record it as a `RESOLVE` revision so the distinction survives in the file.
