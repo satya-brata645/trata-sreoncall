@@ -1,0 +1,390 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* =============================================================================
+   DOS — Developer Operating System
+   Monochrome first. Glass, not chrome. Enterprise density.
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Legacy shadcn-shaped aliases. A handful of ported primitives still reach for
+   `bg-background` / `border-border`; bind them to the role layer so there is
+   exactly one place a colour is decided.
+   -------------------------------------------------------------------------- */
+:root {
+  --background: var(--color-role-surface-page-default);
+  --foreground: var(--color-role-text-content-body);
+  --card: var(--color-role-surface-container-default);
+  --card-foreground: var(--color-role-text-content-body);
+  --popover: var(--dos-elevated);
+  --popover-foreground: var(--color-role-text-content-body);
+  --primary: var(--color-role-surface-action-default);
+  --primary-foreground: var(--color-role-foreground-on-inverse);
+  --secondary: var(--color-role-surface-component-default);
+  --secondary-foreground: var(--color-role-text-content-body);
+  --muted: var(--color-role-surface-component-subtle);
+  --muted-foreground: var(--color-role-text-content-muted);
+  --accent: var(--color-role-foreground-accent);
+  --accent-foreground: var(--color-role-foreground-on-inverse);
+  --destructive: var(--color-role-status-critical-default);
+  --destructive-foreground: var(--dos-white);
+  --border: var(--color-role-border-default);
+  --input: var(--color-role-border-default);
+  --ring: var(--color-role-border-focus);
+  --radius: var(--radius-lg);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* -----------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-role-surface-page-default);
+}
+
+body {
+  color: var(--color-role-text-content-body);
+  font-family: var(--font-sans);
+  font-size: var(--body-md-font-size);
+  line-height: var(--body-md-line-height);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--color-role-text-content-heading);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--dos-white);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--font-weight-semibold);
+  margin-top: 0;
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-role-border-focus);
+  outline-offset: 1px;
+}
+
+::selection {
+  background: rgba(122, 90, 248, 0.32);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* -----------------------------------------------------------------------------
+   Surfaces & glass
+   -------------------------------------------------------------------------- */
+
+/* The desktop: 36px grid lines + a faint radial wash. Wallpaper, not a
+   construct — nothing is ever arranged on it. */
+@utility dos-canvas {
+  background-color: var(--color-role-surface-page-default);
+  background-image:
+    linear-gradient(var(--dos-canvas-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dos-canvas-line) 1px, transparent 1px);
+  background-size: var(--dos-canvas-cell) var(--dos-canvas-cell);
+}
+
+@utility dos-canvas-wash {
+  background: radial-gradient(
+    ellipse 65% 55% at 50% 45%,
+    rgba(255, 255, 255, 0.028),
+    transparent 70%
+  );
+}
+
+/* Windows: translucent layers over the desktop. */
+@utility dos-glass-window {
+  background: var(--dos-window-bg);
+  backdrop-filter: var(--dos-blur);
+  -webkit-backdrop-filter: var(--dos-blur);
+  border: 1px solid var(--color-role-border-subtle);
+  box-shadow: var(--dos-shadow-window), var(--dos-highlight);
+}
+
+/* Rails and the dock: a white-alpha gradient rather than a tinted panel. */
+@utility dos-glass-rail {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.04)
+  );
+  backdrop-filter: var(--dos-blur);
+  -webkit-backdrop-filter: var(--dos-blur);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: var(--dos-shadow-dock), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* The menu bar: a thinner blur, bottom hairline only. */
+@utility dos-glass-bar {
+  background: var(--w-05);
+  backdrop-filter: var(--dos-blur-sm);
+  -webkit-backdrop-filter: var(--dos-blur-sm);
+  border-bottom: 1px solid var(--color-role-border-subtle);
+}
+
+/* Popovers and menus are opaque — they must stay readable over anything. */
+@utility dos-glass-popover {
+  background: rgba(16, 16, 16, 0.96);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: var(--dos-shadow-popover);
+}
+
+/* -----------------------------------------------------------------------------
+   Type utilities
+   -------------------------------------------------------------------------- */
+
+/* Section labels: RECENT, FILES, KERNEL TRACE. Uppercase and tracked — the
+   only place letterspacing is allowed. */
+@utility dos-label {
+  font-size: var(--label-font-size);
+  line-height: var(--label-line-height);
+  letter-spacing: var(--label-tracking);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  color: var(--color-role-text-content-muted);
+}
+
+/* Keyboard hints: 10px on an elevated rounded square. */
+@utility dos-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--dos-elevated);
+  border: 1px solid var(--color-role-border-subtle);
+  font-size: var(--label-lg-font-size);
+  line-height: 1;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-role-text-content-subtle);
+}
+
+/* -----------------------------------------------------------------------------
+   Motion — nothing bounces, nothing loops except status pulses
+   -------------------------------------------------------------------------- */
+@keyframes dos-fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dos-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dos-splashout {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes dos-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dos-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes dos-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes dos-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+@utility animate-dos-fadeup {
+  animation: dos-fadeup 0.24s ease both;
+}
+@utility animate-dos-fade {
+  animation: dos-fade 0.18s ease both;
+}
+@utility animate-dos-pulse {
+  animation: dos-pulse 2.2s ease infinite;
+}
+@utility animate-dos-ring {
+  animation: dos-ring 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dos-fadeup,
+  .animate-dos-fade,
+  .animate-dos-pulse,
+  .animate-dos-ring {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Small helpers
+   -------------------------------------------------------------------------- */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility h-dvh {
+  height: 100dvh;
+}
+
+@utility min-h-dvh {
+  min-height: 100dvh;
+}
+
+/* -----------------------------------------------------------------------------
+   OS surfaces
+   -----------------------------------------------------------------------------
+   These keep the class names the ported shell components already reference, and
+   give them the DOS recipe. Revaluing here rather than rewriting every call
+   site is the same move `tokens.css` makes with the role layer: the port stays
+   diffable against its origin, and the design lives in one place.
+   -------------------------------------------------------------------------- */
+
+/* The desktop. 36px lattice + a faint radial wash, and nothing else — it is
+   wallpaper, not a construct: no icon arranging, no saved layout. */
+.os-canvas {
+  background-color: var(--color-role-surface-page-default);
+  background-image:
+    radial-gradient(
+      ellipse 65% 55% at 50% 45%,
+      rgba(255, 255, 255, 0.028),
+      transparent 70%
+    ),
+    linear-gradient(var(--dos-canvas-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dos-canvas-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    var(--os-canvas-cell, var(--dos-canvas-cell)) var(--os-canvas-cell, var(--dos-canvas-cell)),
+    var(--os-canvas-cell, var(--dos-canvas-cell)) var(--os-canvas-cell, var(--dos-canvas-cell));
+}
+
+/* The dock: a floating pill, not a panel cut into the edge. The gradient is
+   what makes it read as glass — a flat tint at this blur looks like a grey box. */
+.os-dock {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.04)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: var(--dos-shadow-dock), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.os-dock--hidden {
+  transform: translate(calc(-100% - var(--spacing-lg)), -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The command bar. Opaque enough to read over a bright window behind it, still
+   glass enough to belong to the desktop rather than to the page. */
+.os-glass-input {
+  background: rgba(20, 20, 20, 0.82);
+  backdrop-filter: var(--dos-blur);
+  -webkit-backdrop-filter: var(--dos-blur);
+  border: 1px solid var(--color-role-border-default);
+  box-shadow: var(--dos-shadow-window), var(--dos-highlight);
+}
