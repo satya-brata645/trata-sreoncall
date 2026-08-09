@@ -1,0 +1,18 @@
+--- a/src/product-catalog/main.go
++++ b/src/product-catalog/main.go
+@@ -371,7 +371,10 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReq
+ 	// GetProduct will fail on a specific product when feature flag is enabled
+ 	if p.checkProductFailure(ctx, req.Id) {
+ 		msg := "Error: Product Catalog Fail Feature Flag Enabled"
+ 		span.SetStatus(otelcodes.Error, msg)
+ 		span.AddEvent(msg)
+-		return nil, status.Error(codes.Internal, msg)
++		// Unavailable, not Internal: per grpc-go's own codes.go doc comments,
++		// Internal means "some invariant expected by the underlying system
++		// has been broken... something is very broken" -- not true here, this
++		// is the flag deliberately simulating a transient dependency failure.
++		// Unavailable is grpc's documented signal for exactly that case.
++		return nil, status.Error(codes.Unavailable, msg)
+ 	}
+
+ 	found, err := getProductFromDB(ctx, req.Id)
