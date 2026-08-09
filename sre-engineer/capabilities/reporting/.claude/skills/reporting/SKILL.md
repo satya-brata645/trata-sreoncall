@@ -18,10 +18,12 @@ executed.
 ### 1. Shift report — always
 
 `$OUTPUT_DIR/shift-report.md`. What was watched, what alerts fired (or didn't), what
-incidents are open/resolved/escalated, what remediations were proposed (with PR links) and
-their status (proposed / merged / deferred), what got learned this shift across every
-capability, and what the next shift needs to know. This is the periodic status communication a
-real on-call engineer sends their team — distinct from `incident-picture.md`'s live-dashboard
+incidents are open/resolved/escalated, who (if anyone) each open incident's own `paging`
+field says was paged or would be paged and why — cite the actual `urgency_reasoning` and
+`target`, never just "paged" — what remediations were proposed (with PR links) and their
+status (proposed / merged / deferred), what got learned this shift across every capability,
+and what the next shift needs to know. This is the periodic status communication a real
+on-call engineer sends their team — distinct from `incident-picture.md`'s live-dashboard
 view, and distinct from a postmortem's incident-specific depth.
 
 A quiet shift with nothing to report is a fine report. Say so in two lines and stop — padding
@@ -40,6 +42,7 @@ written fresh from what actually happened, never filled in from a template:
 # Postmortem — <incident-id>
 ## What happened (headline, 2-3 lines)
 ## Timeline (from the real incident JSON's revisions, with timestamps)
+## Paging (from the incident's `paging` field — decision, who, why, and any escalation/stand-down)
 ## Root cause (from rca, citing the verified evidence)
 ## Remediation (what was proposed, the second opinion, the release-approval decision, the PR link)
 ## Impact (real numbers, from the alert's own evidence — never invented)

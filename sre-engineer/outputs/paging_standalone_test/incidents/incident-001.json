@@ -1,0 +1,70 @@
+{
+  "id": "inc-001",
+  "headline": "product-catalog is intermittently rejecting GetProduct calls (its own span cites a 'Product Catalog Fail Feature Flag'), cascading HTTP 500s into cart, recommendations, product pages, and checkout via frontend. Sustained heavy failure 07:56-08:20 UTC, now tapering in ~5-10 min bursts, most recent burst 08:50 UTC, quiet since.",
+  "severity": "sev2",
+  "status": "open",
+  "blast_radius": "During active bursts: ~47% of checkout attempts fail (144 failed / 162 ok observed), ~38-47% of product detail page loads fail across all 10 catalog product IDs, and recommendations calls fail at a comparable rate. Cart, product browsing, and purchasing are all degraded because every one of those routes calls product-catalog's GetProduct to hydrate data. Unrelated routes not depending on product-catalog (e.g. /api/data?contextKeys=accessories, ~1.8% failure) are unaffected, so the blast radius is bounded to this one dependency's callers, not system-wide.",
+  "alert_ids": [
+    "alt-001"
+  ],
+  "reasoning": "Single alert, single root cause, so DECLARE rather than ATTACH/MERGE (nothing else is open) or SPLIT (there's only one causal thread here, not two). Chose sev2 over sev1 because the failure is intermittent and self-recovering between bursts rather than a total, unrecovering outage, but it directly hits the revenue-critical checkout path at a high rate during bursts, which rules out sev3/sev4. Status is 'open' rather than 'monitoring' or 'resolved': the most recent burst (08:50 UTC) is only ~7 minutes old at time of writing, and every prior quiet gap of similar length (e.g. 08:23-08:29, 08:41-08:47) was followed by another burst, so a ~7-minute quiet window is not yet evidence of recovery -- it matches the established intermittent pattern, not a break from it.",
+  "revisions": [],
+  "rca": {
+    "root_cause": "product-catalog's GetProduct gRPC handler is gated by checkProductFailure, which evaluates the OpenFeature/flagd boolean flag productCatalogFailure (default false, generated binding flags.ProductCatalogFailure) per-request via a targetless evaluation context keyed on product_id. When the flag evaluates true for a given request, GetProduct returns before ever calling getProductFromDB, setting a gRPC error with code Internal (13) and the literal message 'Error: Product Catalog Fail Feature Flag Enabled' -- exactly matching the trace evidence (rpc.grpc.status_code=13, grpc.error_message text) verbatim. Because nearly every user-facing route (product detail, cart, recommendations, checkout) calls GetProduct to hydrate product data, this single upstream fault cascades into HTTP 500s across all of them, which is exactly the blast radius alert-grouping observed. This is the demo's deliberate fault-injection code path executing correctly as designed when the flag is on for a given evaluation, not an accidental bug in the flag-check logic itself -- the bursty on/off pattern reflects the flag being toggled/cycled by the fault scenario, not a malfunction in checkProductFailure.",
+    "confidence": 0.97,
+    "verified": true,
+    "verify_detail": "A second, fresh sub-agent, given only the bare claim (file src/product-catalog/main.go, function checkProductFailure, called from GetProduct, gRPC code Internal, literal message 'Error: Product Catalog Fail Feature Flag Enabled', returned before the DB lookup) and no prior reasoning, independently confirmed via `gh api repos/open-telemetry/opentelemetry-demo/contents/src/product-catalog` that the file exists at that path, then fetched the real raw content and quoted: GetProduct calling checkProductFailure at line 373; checkProductFailure at lines 419-420 evaluating flags.ProductCatalogFailure.Value(ctx, openfeature.NewTargetlessEvaluationContext(map[string]any{\"product_id\": id})); and the error branch at lines 374-377 returning status.Error(codes.Internal, msg) with msg == 'Error: Product Catalog Fail Feature Flag Enabled', with getProductFromDB only reached afterward at line 380. Verdict: CONFIRMED -- every specific element of the claim (path, function, caller, flag reference, error code, exact message, ordering relative to the DB call) is directly and verbatim supported by the real file content, not a plausible-sounding guess.",
+    "implicated_file": "src/product-catalog/main.go",
+    "implicated_function": "checkProductFailure",
+    "evidence_refs": [
+      "alt-001 evidence: trace 90620f08e78535ebd0cab38f15a5fd37 -- product-catalog span status.message='Error: Product Catalog Fail Feature Flag Enabled', rpc.response.status_code=INTERNAL; frontend span rpc.grpc.status_code=13, grpc.error_message='13 INTERNAL: Error: Product Catalog Fail Feature Flag Enabled'",
+      "alt-001 evidence: traces_span_metrics_calls_total error-count-by-3m-bucket for product-catalog, 07:56-08:56 UTC, showing sustained-then-tapering-burst pattern matching incident timeline",
+      "alt-001 disconfirming check: Loki ERROR-level streams for product-catalog/recommendation/checkout/frontend-proxy all 0 -- ruled out an app-log-visible cause, pointed investigation at trace-level evidence instead",
+      "alt-001 evidence: flagd GET /status/productCatalogFailure -- {'flag':'productCatalogFailure','defaultVariant':'off','description':'Fail product catalog service on a specific product'} (static default only, corroborates flag identity, not live state)",
+      "gh api repos/open-telemetry/opentelemetry-demo/contents/src (this investigation) -- located src/product-catalog directory fresh rather than assuming a fixed path",
+      "curl https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/src/product-catalog/main.go (this investigation) -- read real GetProduct and checkProductFailure implementation, confirmed literal error string and codes.Internal match trace evidence verbatim",
+      "curl https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/src/product-catalog/flags/flags_gen.go (this investigation) -- confirmed flags.ProductCatalogFailure Go binding maps to flagd key 'productCatalogFailure', boolean, default false",
+      "curl https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/src/product-catalog/flags.json (this investigation) -- confirmed flag manifest: type boolean, default false, description 'simulates a potential product catalog failure scenario'",
+      "independent verify sub-agent (this investigation) -- blind re-fetch of src/product-catalog/main.go, quoted lines 373-380 and 419-420, verdict CONFIRMED"
+    ],
+    "investigated_at": "2026-08-09T09:05:00Z"
+  },
+  "paging": {
+    "decision": "PAGE_BUSINESS_HOURS",
+    "decided_at": "2026-08-09T13:54:14Z",
+    "urgency_reasoning": "Blast radius during active bursts was ~47% checkout failure and ~38-47% product page failure -- revenue-critical paths that would justify PAGE_NOW if the impact were confirmed ongoing. However, the most recent burst was at 08:50 UTC and it is now 13:54 UTC: 5h4m of silence. The established burst pattern had quiet gaps of 6-10 minutes between cycles; a 5-hour gap is a 30x+ deviation from that pattern, which strongly implies the fault scenario has naturally stopped cycling rather than that we are in an unusually long quiet window. I cannot honestly say the user impact is confirmed and ongoing -- \"confirmed ongoing\" is the standard for PAGE_NOW, and I will not manufacture it from impact that last occurred 5 hours ago. STAND_DOWN does not apply either: I have no positive evidence the flag was turned off -- the fix was never delivered (PR push blocked, no human applied the flagd config change) -- so the root cause is technically still present and the risk of recurrence is real. PAGE_BUSINESS_HOURS is the right call: the situation demands human attention and action (push the pending remediation branch, open the PR, apply the flagd config fix), but no confirmed current user impact exists to justify interrupting a human on a Sunday afternoon. Today is Sunday; business hours (Mon-Fri 09:30-19:00 IST) do not apply today, so this page goes out at business-hours open Monday 09:30 IST.",
+    "target": {
+      "team": "catalog",
+      "user": "marco.bianchi",
+      "role": "primary",
+      "why_this_person": "product-catalog is the origin service -- it is the upstream point where the productCatalogFailure flag check fails GetProduct and triggers the cascade into cart, checkout, recommendations, and frontend. RCA has run and confirmed the origin; the catalog team owns product-catalog per owns_services in the roster. marco.bianchi is the current primary on-call for the catalog team. No prior escalation has occurred for this incident (first paging decision this shift), so I start at primary rather than skipping ahead."
+    },
+    "informed_not_paged": [
+      {
+        "team": "platform",
+        "reason": "platform owns flagd, which is the service that needs its runtime config changed to resolve this incident (the productCatalogFailure flag must be set to evaluate false). The approved remediation proposal (sre-engineer/remediations/inc-001/) addresses exactly this, but its push was blocked by the command guard and no PR exists yet. The catalog team primary is the responder; platform team needs to be aware at business hours open so they can authorize or execute the flagd config change when the PR is opened. Not paged separately because the incident origin and ownership is catalog -- platform is the executor of the fix, not the incident owner."
+      }
+    ],
+    "escalation_plan": [
+      {
+        "delay_minutes": 0,
+        "target": "marco.bianchi (catalog primary)",
+        "timeout_minutes": 15
+      },
+      {
+        "delay_minutes": 15,
+        "target": "hana.suzuki (catalog secondary)",
+        "timeout_minutes": 15
+      },
+      {
+        "delay_minutes": 30,
+        "target": "priya.nair (catalog team-lead)",
+        "timeout_minutes": 20
+      }
+    ],
+    "channels": [
+      "sms"
+    ],
+    "revisions": []
+  }
+}
