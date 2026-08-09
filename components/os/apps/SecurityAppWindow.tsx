@@ -1,15 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowUpRight, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 
 import { cn, formatCompactRelativeTime, formatSize } from "@/lib/utils";
 import { EmptyState, Icon, Row, SectionLabel, StatusDot } from "@/components/ui/primitives";
-import { appGlyph } from "@/lib/os/appGlyphs";
-import { useBuilds } from "@/lib/os/useBuilds";
+import { useProjects, useSessionFiles } from "@/lib/hooks/useComplianceData";
+import { useBuilds, useSetCurrentBuild } from "@/lib/os/useBuilds";
 import { useAppWakeUps } from "@/lib/os/useAppWakeUps";
-import { useSessionFiles } from "@/lib/hooks/useComplianceData";
 import type { OsAppProps } from "@/lib/os/types";
+import { AppActivityLog } from "./app/AppActivityLog";
+import { AppSidebar } from "./app/AppSidebar";
+import { AppWindowChromeLeading, AppWindowChromeTrailing, type SecurityPanel } from "./app/AppWindowChrome";
+import { BuildHistory } from "./app/BuildHistory";
 
 /**
  * One security app, in a window.
@@ -22,85 +25,81 @@ import type { OsAppProps } from "@/lib/os/types";
  * machinery, and they sit behind their own panels because "what did it find"
  * and "why did it find that" are different questions asked at different times.
  */
-type Panel = "overview" | "history" | "activity";
+function panelFrom(value: string | undefined): SecurityPanel {
+  if (value === "history" || value === "activity") return value;
+  return "overview";
+}
 
-const PANELS: Array<{ id: Panel; label: string }> = [
-  { id: "overview", label: "Overview" },
-  { id: "history", label: "Build history" },
-  { id: "activity", label: "App logs" },
-];
+function severityTone(level?: string): "critical" | "high" | "medium" | "low" {
+  if (level === "critical") return "critical";
+  if (level === "high") return "high";
+  if (level === "low") return "low";
+  return "medium";
+}
 
 export function SecurityAppWindow({ params, setParams }: OsAppProps) {
   const appId = params?.appId ?? "";
-  const panel: Panel =
-    params?.panel === "history" || params?.panel === "activity"
-      ? (params.panel as Panel)
-      : "overview";
+  const panel = panelFrom(params?.panel);
 
+  const { data: projectsData } = useProjects(true);
   const { data: buildsData } = useBuilds(appId || null);
-  const { wakeUps, isLoading } = useAppWakeUps(appId || null);
+  const setCurrentBuild = useSetCurrentBuild(appId || null);
+  const { wakeUps, latestComplete, isLoading } = useAppWakeUps(appId || null);
   const latest = wakeUps[0] ?? null;
-  const { data: filesData } = useSessionFiles(latest?.session_id ?? null);
+  const { data: filesData } = useSessionFiles(latestComplete?.session_id ?? null);
 
-  const glyph = appGlyph(appId);
-  const summary = latest?.summary?.human_readable_summary;
+  const project = useMemo(
+    () => (projectsData?.projects ?? []).find((candidate) => candidate.id === appId),
+    [projectsData, appId],
+  );
+  const appName = project?.name ?? appId;
+  const summary =
+    latestComplete?.summary?.human_readable_summary ??
+    latestComplete?.result_summary?.human_readable_summary;
   const files = useMemo(() => filesData?.files ?? [], [filesData]);
 
-  return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-none items-center gap-1 border-b border-role-border-subtle px-sm py-2">
-        {PANELS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setParams({ panel: p.id })}
-            className={cn(
-              "rounded-xs px-2.5 py-1 text-body-sm",
-              panel === p.id
-                ? "bg-role-surface-component-selected text-role-content-heading"
-                : "text-role-content-subtle hover:bg-role-surface-component-hover",
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-        <span className="ml-auto flex items-center gap-2">
-          {latest?.status === "running" && <StatusDot tone="live" />}
-          <span className="dos-label">
-            {latest?.created_at
-              ? `As of ${formatCompactRelativeTime(latest.created_at)}`
-              : isLoading
-                ? "Loading"
-                : "Never refreshed"}
-          </span>
-        </span>
+  if (!appId) {
+    return (
+      <div className="flex h-full items-center justify-center p-md">
+        <EmptyState title="No app selected" />
       </div>
+    );
+  }
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-md">
+  return (
+    <div className="flex h-full min-w-0 bg-role-surface-page">
+      <AppWindowChromeLeading appId={appId} appName={appName} />
+      <AppWindowChromeTrailing
+        panel={panel}
+        onSelectPanel={(next) => setParams({ panel: next })}
+        lastRefreshedAt={latestComplete?.created_at ?? null}
+        isRefreshing={latest?.status === "running" || latest?.status === "in_progress"}
+      />
+
+      <AppSidebar
+        appId={appId}
+        appName={appName}
+        description={project?.description}
+        tags={project?.tags}
+      />
+
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-md">
         {panel === "overview" && (
           <div className="flex flex-col gap-md p-md">
             {!summary ? (
-              <EmptyState title="Nothing to show yet" hint="This app has not refreshed" />
+              <EmptyState
+                title="Nothing to show yet"
+                hint="This app has not produced a completed refresh yet."
+              />
             ) : (
               <>
-                <div className="flex items-start gap-sm">
-                  <span
-                    style={{ color: glyph.tint }}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-role-surface-component"
-                  >
-                    <Icon icon={glyph.icon} size={18} />
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="text-heading-md font-semibold text-role-content-heading">
-                      {summary.headline}
-                    </h2>
-                    {/* Prose gets a measure. A window can be dragged to
-                        2000px wide, and a 200-character line is unreadable
-                        however good the type is. */}
-                    <p className="mt-1 max-w-[76ch] text-body-md text-role-content-body">
-                      {summary.narrative}
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <h2 className="text-heading-md font-semibold text-role-content-heading">
+                    {summary.headline}
+                  </h2>
+                  <p className="mt-2 max-w-[76ch] text-body-md text-role-content-body">
+                    {summary.narrative}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
@@ -115,19 +114,17 @@ export function SecurityAppWindow({ params, setParams }: OsAppProps) {
                 </div>
 
                 {summary.action_items.length > 0 && (
-                  <div>
-                    <SectionLabel className="px-0">Needs you</SectionLabel>
-                    <div className="flex flex-col gap-1">
-                      {summary.action_items.map((item) => (
-                        <Row key={item} className="px-0">
-                          <StatusDot
-                            tone={summary.criticality_level === "critical" ? "critical" : "medium"}
-                          />
-                          <span className="text-body-md text-role-content-heading">{item}</span>
-                        </Row>
-                      ))}
+                    <div>
+                      <SectionLabel className="px-0">Needs you</SectionLabel>
+                      <div className="flex flex-col gap-1">
+                        {summary.action_items.map((item) => (
+                          <Row key={item} className="px-0">
+                            <StatusDot tone={severityTone(summary.criticality_level)} />
+                            <span className="text-body-md text-role-content-heading">{item}</span>
+                          </Row>
+                        ))}
+                      </div>
                     </div>
-                  </div>
                 )}
 
                 {files.length > 0 && (
@@ -145,11 +142,6 @@ export function SecurityAppWindow({ params, setParams }: OsAppProps) {
                           <span className="text-body-xs text-role-content-muted">
                             {formatSize(file.size)}
                           </span>
-                          <Icon
-                            icon={ArrowUpRight}
-                            size={13}
-                            className="text-role-icon-subtle"
-                          />
                         </Row>
                       ))}
                     </div>
@@ -161,50 +153,17 @@ export function SecurityAppWindow({ params, setParams }: OsAppProps) {
         )}
 
         {panel === "history" && (
-          <>
-            <SectionLabel count={buildsData?.builds.length ?? 0}>Builds</SectionLabel>
-            <div className="flex flex-col gap-px px-2.5">
-              {(buildsData?.builds ?? []).map((build) => (
-                <Row key={build.number}>
-                  <span className="dos-label w-14">Build {build.number}</span>
-                  <span className="flex-1 text-body-sm text-role-content-heading">
-                    {build.conversation_id
-                      ? "Promoted from a build chat"
-                      : "Shipped default"}
-                  </span>
-                  <span className="text-body-xs text-role-content-muted">
-                    {formatCompactRelativeTime(build.promoted_at)}
-                  </span>
-                  {build.number === buildsData?.current_build && (
-                    <span className="rounded-[5px] bg-role-surface-action px-1.5 py-px text-label-lg font-medium tracking-normal text-role-foreground-on-inverse">
-                      Live
-                    </span>
-                  )}
-                </Row>
-              ))}
-            </div>
-          </>
+          <BuildHistory
+            builds={buildsData?.builds ?? []}
+            latestBuild={buildsData?.latest_build ?? null}
+            currentBuild={buildsData?.current_build ?? null}
+            onMakeLive={(buildNumber) => setCurrentBuild.mutate(buildNumber)}
+            isUpdating={setCurrentBuild.isPending}
+          />
         )}
 
         {panel === "activity" && (
-          <>
-            <SectionLabel count={wakeUps.length}>Wake-ups</SectionLabel>
-            <div className="flex flex-col gap-px px-2.5">
-              {wakeUps.map((wake) => (
-                <Row key={wake.session_id} className="items-start">
-                  <StatusDot tone={wake.status === "running" ? "live" : "idle"} className="mt-1.5" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-body-sm text-role-content-heading">
-                      {wake.title}
-                    </p>
-                    <span className="dos-label">
-                      {wake.created_at ? formatCompactRelativeTime(wake.created_at) : "—"}
-                    </span>
-                  </div>
-                </Row>
-              ))}
-            </div>
-          </>
+          <AppActivityLog wakeUps={wakeUps} isLoading={isLoading} />
         )}
       </div>
     </div>
