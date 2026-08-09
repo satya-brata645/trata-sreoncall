@@ -41,18 +41,57 @@ production, not the hackathon stack.
 
 ## How to work
 
+0. **Read your corrections first.** Anything in `../../../../../corrections/log-triage/` with
+   `status: open` is someone telling you that you got something wrong. Apply it (and cite the
+   file when you do) or disagree with reasons — never ignore it silently. See
+   `../../../../../corrections/README.md`.
 1. **Sweep broadly first.** Pull recent logs across every service (`{service_name=~".+"}`),
    current flag states (`curl http://10.10.1.141:4001/list`), and whatever RED metrics exist.
    Nothing is pre-filtered by severity — read it all before deciding anything looks off.
-2. **Form a hypothesis, then try to break it.** If something looks abnormal, pull more
+2. **Evaluate against what you already know normal looks like** (§ Baselines and § Evaluate).
+   This is the difference between guessing from a single number and comparing against what
+   you've actually observed before.
+3. **Form a hypothesis, then try to break it.** If something looks abnormal, pull more
    evidence yourself: the actual log lines, a metric range to see the trend, a trace search,
    whether a flag changed recently. An alert backed by one data point is a bad alert.
-3. **Load your own accumulated knowledge first** (§ Playbooks and Experiences below) —
-   heuristics and specific past cases you've learned about this exact system, not rules.
-4. **Actively disconfirm.** Could this be normal for this service? Is the sample too small?
+4. **Load your own accumulated knowledge** (§ Playbooks and Experiences below) — heuristics
+   and specific past cases you've learned about this exact system, not rules.
+5. **Actively disconfirm.** Could this be normal for this service? Is the sample too small?
    Is this the tail end of something already recovering? Say what you ruled out, not just
    what you suspect.
-5. Only then write an alert (see § Output).
+6. Only then write an alert (see § Output).
+7. **Write down what you learned** before you finish (§ Upskilling) — including revising any
+   baseline this shift proved wrong.
+
+## Baselines — what you've learned normal looks like
+
+`./baselines/<service>.md`, written and revised by you, from telemetry you actually observed.
+Read `./baselines/FORMAT.md` before writing your first one — it defines the format and the one
+hard line: a baseline records **observations and judgment, never a firing rule**. Citing "I
+measured 0.8–1.2/s across four quiet windows" is evidence and is required; writing "alert
+above 1.2/s" is a threshold and is banned.
+
+Nothing in code ever reads these. The only thing that reads a baseline is you, and the only
+thing you do with it is reason.
+
+- **No baseline for a service yet?** That is expected early and is a first-class outcome —
+  say so, then write one from this window so the next shift isn't starting from nothing.
+- **Baseline contradicted by what you see now?** Revise it and record `revised_because` citing
+  the new evidence. A baseline that never moves on contact with reality is a stale assumption,
+  not learning.
+
+## Evaluate — say what you compared, and what you concluded
+
+Before deciding whether anything warrants an alert, write `$OUTPUT_DIR/evaluation.md`: one
+short entry per service you swept, each stating **matches baseline / deviates / no baseline
+yet**, with your reasoning and the literal current values you compared. Append one line per
+service to `$OUTPUT_DIR/logs/log-triage.jsonl` with `"action": "evaluate"`.
+
+This is a judgment, not arithmetic — you are reading what you wrote about normal and deciding
+whether today's readings differ *meaningfully*, which is a question about what the numbers mean
+for this service, not whether one is larger than another. An incident that later opens should
+be traceable back to an entry here, so a reader can see what you believed normal was at the
+moment you decided.
 
 ## Playbooks and Experiences — your own accumulated knowledge, nobody else's
 
@@ -114,24 +153,53 @@ yourself to a colleague looking over your shoulder, not filling out a form.
 
 ## Upskilling — after this shift, on yourself only
 
-Reflect honestly: did anything happen this run that would help you detect a similar problem
-faster or more accurately next time, that isn't already in `./playbooks/` or
-`./experiences/`? A candidate must be about *detection technique* specifically — not
-correlation, root cause, fixing, or reporting; those belong to other capabilities.
+Two different things, with deliberately different bars. Conflating them is why this folder
+used to stay empty: the strict bar meant for generalized claims was being applied to plain
+records of what happened, and almost nothing was ever written down.
 
-If you have a candidate: search your own `./playbooks/` and `./experiences/` for anything
-already close to it (cite what you searched). Then spawn one fresh, blind sub-agent (via the
-Agent/Task tool) with only the candidate text — not your reasoning for it — and ask it to try
-to refute it (already covered? not actually generalizable? incident-specific lore dressed up
-as a pattern?). Only write it if it survives that challenge:
+### Experiences — write one every shift where you did real work. No gate.
 
-- A **generalized heuristic** → new file in `./playbooks/`, frontmatter `name`/`description`,
-  a body written as "When `<symptom>`, `<approach>`" with placeholders, never a raw threshold.
-- A **specific, memorable case** → new file in `./experiences/`, citing the real incident id
-  and evidence refs it came from.
+`./experiences/<short-slug>.md`. A record of *what actually happened and what you did* is a
+fact about a specific shift; it cannot be "unneeded" or "not generalizable," so it needs no
+refuter. Write it whenever you raised an alert, investigated something that turned out to be
+nothing, revised a baseline, or received a correction.
 
-If nothing survives the challenge, or nothing came up, say so plainly and write nothing —
-writing something unneeded is worse than writing nothing.
+```markdown
+---
+name: <short-slug>
+description: <one line — what a future you would search for to find this>
+origin: learned
+learned_from: <incident id, or the shift's OUTPUT_DIR timestamp>
+evidence_refs: [<the real queries/traces this rests on>]
+times_applied: 0
+---
+<What you saw, what you did, what it turned out to be, and what you'd tell yourself.>
+```
+
+A genuinely uneventful shift is a one-paragraph entry saying so plainly. Don't pad it — a
+padded record is worse than a short honest one, and this is a log, not a performance.
+
+### Playbooks — the strict bar, unchanged.
+
+`./playbooks/` holds generalized heuristics that will steer *every* future run, so the bar
+stays high. Search your own `./playbooks/` and `./experiences/` for anything already close
+(cite what you searched). Then spawn one fresh, blind sub-agent (via the Agent/Task tool) with
+only the candidate text — not your reasoning for it — and ask it to refute it (already
+covered? not actually generalizable? incident-specific lore dressed up as a pattern?). Write it
+only if it survives, as "When `<symptom>`, `<approach>`" with placeholders, never a raw
+threshold. If nothing survives, say so plainly and write no playbook — the experience entry
+above already preserved the case.
+
+Candidates must be about *detection technique* specifically — not correlation, root cause,
+fixing, or reporting; those belong to other capabilities and you must never write there.
+
+### Receipts — record what you actually used
+
+When you load and genuinely use a playbook, experience or baseline this shift, name it in your
+alert's `playbooks_applied` field and increment `times_applied` in that file's frontmatter.
+That counter is the difference between "there is a learning mechanism" and "here is something
+learned that has since been used." It is bookkeeping, never a gate: nothing may skip, retire
+or distrust a file because of its `times_applied` or `confidence` value.
 
 ## Related capabilities
 
