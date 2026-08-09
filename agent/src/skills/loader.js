@@ -87,12 +87,78 @@ function loadByName(name) {
   return null;
 }
 
+// ---------------------------------------------------------------- receipts --
+//
+// `times_applied` used to be decorative: author.js wrote the literal 0, this
+// file read it back, and six SKILL.md files instructed the model to increment
+// it — but nothing ever did, so it read 0 forever and there was no way to show
+// that a learned skill had ever actually been used. This is that writer.
+//
+// The split matters and is deliberate: the MODEL decides it used a skill (and
+// names it in the alert's `skills_applied`/`playbooks_applied` field, which is
+// a judgment); this code only records what was already decided. Incrementing a
+// counter concludes nothing about the target system.
+//
+// Nothing may ever gate on the resulting value — no "skip skills with
+// times_applied < N", no ranking by it. It is provenance a reader can check,
+// not an input to any decision. That would be exactly the smuggled threshold
+// this project bans everywhere else.
+
+const APPLICATIONS_LOG = path.join(__dirname, "..", "data", "applications.jsonl");
+
+function bumpTimesApplied(filePath) {
+  const raw = fs.readFileSync(filePath, "utf8");
+  const match = raw.match(/^(---\n[\s\S]*?)times_applied:\s*(\d+)([\s\S]*?\n---\n)/);
+  if (!match) return null;
+  const next = Number(match[2]) + 1;
+  fs.writeFileSync(
+    filePath,
+    raw.replace(match[0], `${match[1]}times_applied: ${next}${match[3]}`)
+  );
+  return next;
+}
+
+// Records that the named skills were actually used on this run. Returns one
+// row per skill so a caller can log or surface it. Unknown names are reported
+// rather than silently dropped — a model citing a skill that doesn't exist is
+// worth seeing, not hiding.
+function recordApplication(names, context = {}) {
+  const rows = [];
+  for (const name of names || []) {
+    const skill = loadByName(name);
+    if (!skill) {
+      rows.push({ name, recorded: false, reason: "no such skill" });
+      continue;
+    }
+    const filePath = path.join(skill._dir, skill._filename);
+    const count = bumpTimesApplied(filePath);
+    const row = {
+      at: new Date().toISOString(),
+      skill: name,
+      origin: skill.origin,
+      times_applied: count,
+      incident_id: context.incidentId || null,
+      alert_id: context.alertId || null,
+      run: context.run || null,
+      recorded: count !== null,
+    };
+    rows.push(row);
+    if (count !== null) {
+      fs.mkdirSync(path.dirname(APPLICATIONS_LOG), { recursive: true });
+      fs.appendFileSync(APPLICATIONS_LOG, JSON.stringify(row) + "\n");
+    }
+  }
+  return rows;
+}
+
 module.exports = {
   listDescriptions,
   loadByName,
   parseFrontmatter,
   listAllSkillFiles,
   readSkillFile,
+  recordApplication,
   BASE_DIR,
   LEARNED_DIR,
+  APPLICATIONS_LOG,
 };

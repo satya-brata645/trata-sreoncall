@@ -15,6 +15,7 @@ const triage = require("./src/agents/triage");
 const correlator = require("./src/agents/correlator");
 const humanResponse = require("./src/agents/human-response");
 const skillsAuthor = require("./src/skills/author");
+const skills = require("./src/skills/loader");
 const selfAccountability = require("./src/self-accountability");
 const cli = require("./src/surface/cli");
 
@@ -60,6 +61,23 @@ async function runOneCycle() {
       const target = s.recent_windows[s.recent_windows.length - 1];
       if (target) target.had_alert = true;
     }
+
+    // Receipts: triage named the skills it actually used in each alert's
+    // `skills_applied` — that naming is the model's judgment. Recording it is
+    // bookkeeping, and it's what makes "this skill has been used" checkable
+    // instead of a claim. Nothing downstream may gate on the resulting count.
+    for (const alert of newAlerts) {
+      const rows = skills.recordApplication(alert.skills_applied || [], {
+        alertId: alert.id,
+        run: `cycle-${cycleCount}`,
+      });
+      for (const r of rows.filter((x) => x.recorded)) {
+        console.log(`[skills] applied "${r.skill}" (${r.origin}) — times_applied now ${r.times_applied}`);
+      }
+      for (const r of rows.filter((x) => x.recorded === false)) {
+        console.log(`[skills] WARNING: alert cited unknown skill "${r.name}"`);
+      }
+    }
   }
 
   if (shouldRunCorrelator) {
@@ -67,12 +85,27 @@ async function runOneCycle() {
     console.log(`[correlator] ${correlatorResult.actionsTaken.length} action(s). ${correlatorResult.summary.split("\n")[0]}`);
     for (const action of correlatorResult.actionsTaken) {
       lifecycle.emit(action.type, action);
-      if (action.type === "incident.resolved") {
-        const incident = s.incidents[action.incident_id];
-        const alerts = (incident.alert_ids || []).map((id) => s.alerts[id]).filter(Boolean);
-        const reflection = await skillsAuthor.reflect({ incident, alerts });
-        console.log(`[skills] ${reflection.actionsTaken.map((a) => a.type).join(", ") || "no action"} — ${reflection.summary.split("\n")[0]}`);
-      }
+    }
+
+    // Reflect on anything substantive that happened this cycle — not only on a
+    // resolution. This used to fire ONLY inside `if (action.type ===
+    // "incident.resolved")`, which is why the loop almost never ran: incidents
+    // legitimately stay open across shifts while evidence accumulates, so a
+    // shift could investigate hard, learn something real, and record none of
+    // it. A resolution is not the only thing worth learning from; a
+    // declaration, a revision, or a raised alert all teach something.
+    const resolved = correlatorResult.actionsTaken.find((a) => a.type === "incident.resolved");
+    const substantive = resolved
+      || correlatorResult.actionsTaken.find((a) => a.type === "incident.declared" || a.type === "incident.revised")
+      || (newAlerts.length ? { incident_id: null } : null);
+
+    if (substantive) {
+      const incident = substantive.incident_id ? s.incidents[substantive.incident_id] : null;
+      const alerts = incident
+        ? (incident.alert_ids || []).map((id) => s.alerts[id]).filter(Boolean)
+        : newAlerts;
+      const reflection = await skillsAuthor.reflect({ incident, alerts });
+      console.log(`[skills] ${reflection.actionsTaken.map((a) => a.type).join(", ") || "no action"} — ${reflection.summary.split("\n")[0]}`);
     }
   }
 

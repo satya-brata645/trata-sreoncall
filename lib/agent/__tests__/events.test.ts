@@ -85,3 +85,76 @@ test("parseDecision reads a fenced answer", () => {
 test("speak without a message is silence", () => {
   assert.equal(parseDecision('{"speak": true, "message": "   "}').speak, false);
 });
+
+// ---------------------------------------------------------------------------
+// `learning` — the kind that reports on the agent rather than the target system
+// ---------------------------------------------------------------------------
+
+const VALID_LEARNING = {
+  source: "sre-engineer/log-triage",
+  kind: "learning",
+  severity: "info",
+  headline: "Learned: confirm traffic before reading a drop in errors",
+  learning: {
+    capability: "log-triage",
+    artifact: "capabilities/log-triage/.claude/skills/log-triage/baselines/product-catalog.md",
+    artifactKind: "baseline",
+    origin: "self-authored",
+    lesson: "Zero errors means nothing if zero requests were served in the same window.",
+  },
+};
+
+test("a learning event carries its provenance", () => {
+  const event = parseEvent(VALID_LEARNING);
+  assert.ok(!("error" in event));
+  if ("error" in event) return;
+  assert.equal(event.learning?.capability, "log-triage");
+  assert.equal(event.learning?.artifactKind, "baseline");
+  assert.equal(event.learning?.origin, "self-authored");
+});
+
+test("a learning with nothing to check is refused", () => {
+  // This is the one kind that would actively mislead if it were accepted with
+  // holes: it would render as "the agent learned something" while carrying
+  // nothing a reader could go and verify.
+  for (const [missing, learning] of [
+    ["capability", { ...VALID_LEARNING.learning, capability: "" }],
+    ["artifact", { ...VALID_LEARNING.learning, artifact: "  " }],
+    ["lesson", { ...VALID_LEARNING.learning, lesson: "" }],
+    ["artifactKind", { ...VALID_LEARNING.learning, artifactKind: "vibes" }],
+    ["origin", { ...VALID_LEARNING.learning, origin: "osmosis" }],
+  ] as const) {
+    const result = parseEvent({ ...VALID_LEARNING, learning });
+    assert.ok("error" in result, `expected ${missing} to be rejected`);
+    assert.match((result as { error: string }).error, new RegExp(missing));
+  }
+});
+
+test("an absorbed correction must say which correction", () => {
+  // Claiming to have absorbed a correction is the harder half of the dimension
+  // and the one a reader is most entitled to be sceptical about, so it has to
+  // name the file it came from.
+  const result = parseEvent({
+    ...VALID_LEARNING,
+    learning: { ...VALID_LEARNING.learning, origin: "correction-absorbed" },
+  });
+  assert.ok("error" in result);
+  assert.match((result as { error: string }).error, /correctionRef/);
+
+  const ok = parseEvent({
+    ...VALID_LEARNING,
+    learning: {
+      ...VALID_LEARNING.learning,
+      origin: "correction-absorbed",
+      correctionRef: "corrections/log-triage/20260809-130000-quiet-window-is-not-recovery.md",
+    },
+  });
+  assert.ok(!("error" in ok));
+});
+
+test("learning detail is absent on every other kind", () => {
+  const event = parseEvent({ ...VALID, learning: VALID_LEARNING.learning });
+  assert.ok(!("error" in event));
+  if ("error" in event) return;
+  assert.equal(event.learning, undefined);
+});

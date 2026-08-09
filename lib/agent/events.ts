@@ -28,7 +28,47 @@ export type EventKind =
   | "diagnosis"
   | "remediation"
   | "resolved"
-  | "report";
+  | "report"
+  | "learning";
+
+/**
+ * What a `learning` event carries beyond the common fields.
+ *
+ * The other kinds all report something about the *target system*. This one
+ * reports something about the agent itself: that it now knows something it
+ * didn't before, and where that knowledge came from. It exists because
+ * knowledge earned by the SRE agent was previously trapped in the SRE agent —
+ * a lesson learned while triaging never reached this side, so the same mistake
+ * stayed available to every other surface.
+ *
+ * `provenance` is not decoration. A learning with no incident and no evidence
+ * behind it is an assertion, and an assertion that reshapes future behaviour is
+ * exactly the thing that should be hard to introduce.
+ */
+export interface LearningDetail {
+  /** Which capability learned it — log-triage, rca, remediation, … */
+  capability: string;
+  /** Where it lives now, so a reader can go and read the thing itself. */
+  artifact: string;
+  /** A durable heuristic, a specific remembered case, or an observed baseline. */
+  artifactKind: "playbook" | "experience" | "baseline" | "skill";
+  /**
+   * Learned from its own work, or absorbed because someone said it was wrong.
+   * Worth distinguishing: the second is the harder half, and the one a reader
+   * is most entitled to be sceptical about.
+   */
+  origin: "self-authored" | "correction-absorbed" | "revised";
+  /** What changed, in a sentence — the thing a future run would act on. */
+  lesson: string;
+  /** When `correction-absorbed`, the correction file this came from. */
+  correctionRef?: string;
+  /**
+   * How many times this artifact has since been used. Provenance a reader can
+   * check, never an input to a decision — nothing may rank, skip or retire an
+   * artifact by this number.
+   */
+  timesApplied?: number;
+}
 
 export interface EventEvidence {
   /** What sort of thing this points at, so the UI can badge it. */
@@ -62,6 +102,8 @@ export interface SreEventInput {
   /** The producer's own id for this event, if it has one. Used for dedupe. */
   externalId?: string;
   at?: string;
+  /** Present on `learning` events; absent everywhere else. */
+  learning?: LearningDetail;
 }
 
 export interface SreEvent extends SreEventInput {
@@ -81,7 +123,47 @@ const KINDS: readonly EventKind[] = [
   "remediation",
   "resolved",
   "report",
+  "learning",
 ];
+
+const ARTIFACT_KINDS = ["playbook", "experience", "baseline", "skill"] as const;
+const LEARNING_ORIGINS = ["self-authored", "correction-absorbed", "revised"] as const;
+
+/**
+ * A `learning` event has to say what was learned, by whom, and where it lives.
+ * Rejected rather than silently accepted with holes, because a learning nobody
+ * can trace back is indistinguishable from one that was made up.
+ */
+function parseLearning(raw: unknown): LearningDetail | { error: string } {
+  const d = (raw ?? {}) as Partial<LearningDetail>;
+  if (typeof d.capability !== "string" || !d.capability.trim()) {
+    return { error: "`learning.capability` is required — which capability learned this." };
+  }
+  if (typeof d.artifact !== "string" || !d.artifact.trim()) {
+    return { error: "`learning.artifact` is required — where the learning is written down." };
+  }
+  if (typeof d.lesson !== "string" || !d.lesson.trim()) {
+    return { error: "`learning.lesson` is required — what a future run would do differently." };
+  }
+  if (!ARTIFACT_KINDS.includes(d.artifactKind as (typeof ARTIFACT_KINDS)[number])) {
+    return { error: `\`learning.artifactKind\` must be one of: ${ARTIFACT_KINDS.join(", ")}.` };
+  }
+  if (!LEARNING_ORIGINS.includes(d.origin as (typeof LEARNING_ORIGINS)[number])) {
+    return { error: `\`learning.origin\` must be one of: ${LEARNING_ORIGINS.join(", ")}.` };
+  }
+  if (d.origin === "correction-absorbed" && (typeof d.correctionRef !== "string" || !d.correctionRef.trim())) {
+    return { error: "`learning.correctionRef` is required when origin is `correction-absorbed`." };
+  }
+  return {
+    capability: d.capability.trim(),
+    artifact: d.artifact.trim(),
+    artifactKind: d.artifactKind as LearningDetail["artifactKind"],
+    origin: d.origin as LearningDetail["origin"],
+    lesson: d.lesson.trim(),
+    correctionRef: typeof d.correctionRef === "string" ? d.correctionRef.trim() : undefined,
+    timesApplied: typeof d.timesApplied === "number" && d.timesApplied >= 0 ? d.timesApplied : undefined,
+  };
+}
 
 function slug(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
@@ -108,6 +190,16 @@ export function parseEvent(raw: unknown): SreEvent | { error: string } {
   }
   if (!SEVERITIES.includes(input.severity as EventSeverity)) {
     return { error: `\`severity\` must be one of: ${SEVERITIES.join(", ")}.` };
+  }
+
+  // A `learning` event without its detail is the one kind that would be
+  // actively misleading: it would render as "the agent learned something" while
+  // carrying nothing anyone could check.
+  let learning: LearningDetail | undefined;
+  if (input.kind === "learning") {
+    const parsed = parseLearning(input.learning);
+    if ("error" in parsed) return parsed;
+    learning = parsed;
   }
 
   const at = typeof input.at === "string" && !Number.isNaN(Date.parse(input.at))
@@ -144,5 +236,6 @@ export function parseEvent(raw: unknown): SreEvent | { error: string } {
         ? input.confidence
         : undefined,
     externalId: typeof input.externalId === "string" ? input.externalId : undefined,
+    learning,
   };
 }
