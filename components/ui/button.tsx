@@ -76,6 +76,7 @@ const buttonVariants = cva(
         md: "gap-xs p-sm rounded-sm text-body-md [&_svg]:size-4 [&_svg]:shrink-0",
         // Small: p-xs (8), gap-2xs (4), rounded-xs (8), body/sm (14/20), icon 12
         sm: "gap-2xs p-xs rounded-xs text-body-sm [&_svg]:size-3 [&_svg]:shrink-0",
+        xs: "gap-1 rounded-xs px-1.5 py-1 text-[11px] [&_svg]:size-3 [&_svg]:shrink-0",
       },
     },
     defaultVariants: {
@@ -86,7 +87,7 @@ const buttonVariants = cva(
 );
 
 type CanonicalVariant = "filled" | "outline" | "transparent";
-type CanonicalSize = "lg" | "md" | "sm";
+type CanonicalSize = "lg" | "md" | "sm" | "xs";
 
 type LegacyVariant = "default" | "secondary" | "ghost" | "link";
 type LegacySize = "default" | "icon";

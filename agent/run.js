@@ -16,9 +16,11 @@ const correlator = require("./src/agents/correlator");
 const humanResponse = require("./src/agents/human-response");
 const skillsAuthor = require("./src/skills/author");
 const selfAccountability = require("./src/self-accountability");
+const professionalPractice = require("./src/professional-practice");
 const cli = require("./src/surface/cli");
 
 const RETROACTIVE_CHECK_EVERY_N_CYCLES = 5; // operational cadence, not judgment — see PROMPT §0
+const PRACTICE_REVIEW_EVERY_N_CYCLES = 3; // schedule only; recovery/recurrence remains model judgment
 const RUN_ONCE = process.argv.includes("--once");
 
 // Log every lifecycle event to the console as a plain record of work
@@ -55,7 +57,13 @@ async function runOneCycle() {
   if (shouldRunTriage) {
     const triageResult = await triage.runTriage({ window });
     newAlerts = triageResult.alerts;
+    const applications = professionalPractice.recordSkillApplications({
+      state: s,
+      alerts: newAlerts,
+      loadedSkillNames: triageResult.loadedSkillNames,
+    });
     console.log(`[triage] ${newAlerts.length} alert(s) raised. ${triageResult.summary.split("\n")[0]}`);
+    if (applications.length) console.log(`[skills] recorded ${applications.length} evidence-backed skill application(s)`);
     if (newAlerts.length) {
       const target = s.recent_windows[s.recent_windows.length - 1];
       if (target) target.had_alert = true;
@@ -69,6 +77,7 @@ async function runOneCycle() {
       lifecycle.emit(action.type, action);
       if (action.type === "incident.resolved") {
         const incident = s.incidents[action.incident_id];
+        professionalPractice.scheduleResolvedIncident({ state: s, incident });
         const alerts = (incident.alert_ids || []).map((id) => s.alerts[id]).filter(Boolean);
         const reflection = await skillsAuthor.reflect({ incident, alerts });
         console.log(`[skills] ${reflection.actionsTaken.map((a) => a.type).join(", ") || "no action"} — ${reflection.summary.split("\n")[0]}`);
@@ -92,6 +101,17 @@ async function runOneCycle() {
           ? `[self-check] window ${note.window_observed_at} reviewed — no miss found`
           : `[self-check] MISS FOUND for window ${note.window_observed_at}: ${note.agent_finding}`
       );
+    }
+  }
+
+  // Each resolved incident receives several later independent reviews. This
+  // checks whether observed recovery held and turns model-judged recurrence
+  // into a provenance-carrying playbook only when fresh evidence supports it.
+  if (cycleCount % PRACTICE_REVIEW_EVERY_N_CYCLES === 0) {
+    const review = await professionalPractice.runNextFollowUp(s);
+    if (review) {
+      if (review.skipped) console.log(`[practice] ${review.incident_id}: ${review.reason}`);
+      else console.log(`[practice] ${review.incident_id}: recovery=${review.review.recovery_status}, remaining=${review.reviews_remaining}${review.playbook?.written ? `; playbook ${review.playbook.action}: ${review.playbook.name}` : ""}`);
     }
   }
 

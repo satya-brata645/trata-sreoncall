@@ -50,6 +50,23 @@ function empty(appId: string): BuildDocument {
   return { app_id: normalizeAppId(appId), builds: [], latest_build: null, current_build: null };
 }
 
+/**
+ * Fresh checkouts still need a visible, inspectable build pointer. These are
+ * shipped defaults (not user promotions): the first promotion simply becomes
+ * build N+1 and is durably written to `.data/`.
+ */
+const SHIPPED_BUILDS: Record<string, BuildDocument> = {
+  sreoncall: {
+    app_id: "sreoncall",
+    builds: [{ number: 1, promoted_at: "2026-08-09T11:00:00.000Z", promoted_by: "Trata", metadata: { shipped: true } }],
+    latest_build: 1,
+    current_build: 1,
+  },
+  dpflo: { app_id: "dpflo", builds: [{ number: 1, promoted_at: "2026-08-09T11:00:00.000Z", promoted_by: "Trata", metadata: { shipped: true } }], latest_build: 1, current_build: 1 },
+  kodeshield: { app_id: "kodeshield", builds: [{ number: 1, promoted_at: "2026-08-09T11:00:00.000Z", promoted_by: "Trata", metadata: { shipped: true } }], latest_build: 1, current_build: 1 },
+  auditiseasy: { app_id: "auditiseasy", builds: [{ number: 1, promoted_at: "2026-08-09T11:00:00.000Z", promoted_by: "Trata", metadata: { shipped: true } }], latest_build: 1, current_build: 1 },
+};
+
 function normalize(doc: Partial<BuildDocument>, appId: string): BuildDocument {
   const builds = Array.isArray(doc.builds)
     ? doc.builds.filter((build): build is BuildRecord => Boolean(build && Number.isInteger(build.number) && typeof build.promoted_at === "string"))
@@ -64,7 +81,7 @@ export async function listBuilds(appId: string): Promise<BuildDocument> {
   try {
     return normalize(JSON.parse(await fs.readFile(fileFor(safeAppId), "utf8")) as Partial<BuildDocument>, safeAppId);
   } catch {
-    return empty(safeAppId);
+    return SHIPPED_BUILDS[safeAppId] ?? empty(safeAppId);
   }
 }
 

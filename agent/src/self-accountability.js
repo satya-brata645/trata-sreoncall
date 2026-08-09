@@ -17,12 +17,19 @@ const { INVESTIGATIVE_TOOLS, buildInvestigativeToolImpls } = require("./agents/i
 // as a side effect of their own decisions, not a computed judgment.
 function performanceReport(state) {
   const p = state.performance;
+  const practice = state.practice || { follow_ups: [], playbooks: [] };
   const detectToDeclareMs = p.detect_to_declare_log
     .map((e) => new Date(e.incident_declared_at) - new Date(e.alert_first_seen))
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const avgDetectToDeclareMs = detectToDeclareMs.length
     ? Math.round(detectToDeclareMs.reduce((a, b) => a + b, 0) / detectToDeclareMs.length)
     : null;
+
+  const skillOutcomes = (p.skill_application_log || []).reduce((counts, entry) => {
+    const outcome = entry.outcome || "awaiting-resolution";
+    counts[outcome] = (counts[outcome] || 0) + 1;
+    return counts;
+  }, {});
 
   return {
     sweeps_run: p.sweeps_run,
@@ -34,6 +41,10 @@ function performanceReport(state) {
     avg_detect_to_declare_ms: avgDetectToDeclareMs,
     retroactive_misses_found: p.retroactive_miss_notes.length,
     retroactive_miss_notes: p.retroactive_miss_notes,
+    skill_applications: (p.skill_application_log || []).length,
+    skill_outcomes: skillOutcomes,
+    professional_practice_follow_ups_pending: (practice.follow_ups || []).filter((item) => item.reviews_remaining > 0).length,
+    professional_practice_playbooks: (practice.playbooks || []).map((item) => item.skill_name),
   };
 }
 

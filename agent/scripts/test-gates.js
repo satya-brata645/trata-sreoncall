@@ -1,7 +1,7 @@
 // Unit tests for src/skills/gates.js — pure functions, zero API calls, zero
 // rate-limit risk. Run first per PLAN-malleability-only-95.md §7 step 1.
 const assert = require("node:assert");
-const { scrubIncidentIdentifiers, hasEvidencedDuplicateSearch, promotionGate } = require("../src/skills/gates");
+const { scrubIncidentIdentifiers, skillContentGate, hasEvidencedDuplicateSearch, promotionGate } = require("../src/skills/gates");
 
 let passed = 0;
 function test(name, fn) {
@@ -104,6 +104,21 @@ test("no judgment at all -> SKIP on judge_error", () => {
 test("scrubIncidentIdentifiers: clean generic text passes", () => {
   const result = scrubIncidentIdentifiers("When <SERVICE> shows elevated latency, check its dependencies first.");
   assert.strictEqual(result.clean, true);
+});
+
+test("skillContentGate: admits an evidence-led heuristic", () => {
+  const result = skillContentGate("When <SERVICE> shows a changed failure shape, compare fresh traces with the earlier incident before concluding recovery held.");
+  assert.strictEqual(result.ok, true);
+});
+
+test("skillContentGate: rejects a hidden numeric alert rule", () => {
+  const result = skillContentGate("When latency > 100, alert the responder.");
+  assert.strictEqual(result.ok, false);
+});
+
+test("skillContentGate: rejects incident identifiers in a reusable body", () => {
+  const result = skillContentGate("The inc_4a67dced536a response was the correct one.");
+  assert.strictEqual(result.ok, false);
 });
 
 test("hasEvidencedDuplicateSearch: rejects missing field entirely", () => {
