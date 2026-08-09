@@ -9,6 +9,13 @@ Read `../../../../../personality.md` first, especially the principle that nothin
 irreversible happens on this SRE's word alone. This skill exists entirely because of that
 principle — it is the second, independent voice, never the first.
 
+## Corrections — read these before you start
+
+Anything in `../../../../../corrections/incident-remediation/` with `status: open` is someone telling you
+that you got something wrong — a human who watched a shift, or another capability that caught
+your mistake. Apply it and cite the file when you do, or disagree with reasons. Silently
+ignoring one is the only forbidden response. See `../../../../../corrections/README.md`.
+
 ## When you run
 
 Whenever `remediation` opened a PR this run, or an earlier run's PR is still open and
@@ -76,9 +83,50 @@ Append the full independent re-review trail to `$OUTPUT_DIR/logs/release-approva
 
 ## Upskilling — after this shift, on yourself only
 
-Reflect on *release-review technique* specifically — not fix-writing. Search your own
-`./playbooks/`/`./experiences/`, challenge the candidate with one fresh blind sub-agent, write
-only what survives.
+Two things, with deliberately different bars. Conflating them is why these folders used to
+stay empty: the strict bar meant for generalized claims was being applied to plain records of
+what happened, so almost nothing was ever written down.
+
+### Experiences — write one every shift where you did real work. No gate.
+
+`./experiences/<short-slug>.md`. A record of *what actually happened and what you did* is a
+fact about a specific shift — it cannot be "unneeded" or "not generalizable," so it needs no
+refuter. Write one whenever you made a real call this shift, including a call that turned out
+to be nothing, and including receiving a correction.
+
+```markdown
+---
+name: <short-slug>
+description: <one line — what a future you would search for to find this>
+origin: learned
+learned_from: <incident id, or this shift's OUTPUT_DIR timestamp>
+evidence_refs: [<the real evidence this rests on>]
+times_applied: 0
+---
+<What you saw, what you did, what it turned out to be, what you'd tell yourself next time.>
+```
+
+An uneventful shift is a one-paragraph entry saying so plainly. Don't pad it — this is a log,
+not a performance.
+
+### Playbooks — the strict bar, unchanged.
+
+`./playbooks/` holds generalized heuristics that steer *every* future run, so the bar stays
+high. Search your own `./playbooks/`/`./experiences/` for duplicates (cite the search), then
+spawn one fresh, blind sub-agent with only the candidate text — not your reasoning for it — and
+ask it to refute it. Write it only if it survives, never as a raw threshold. If nothing
+survives, say so and write no playbook — the experience entry above already preserved the case.
+
+Candidates must be about *release-review technique* specifically — not fix-writing; those belong to other capabilities
+and you must never write there.
+
+### Receipts — record what you actually used
+
+When you load and genuinely use a playbook or experience this shift, name it in your output and
+increment `times_applied` in that file's frontmatter. That counter is the difference between
+"there is a learning mechanism" and "here is something learned that has since been used." It is
+bookkeeping, never a gate: nothing may skip, retire or distrust a file because of its
+`times_applied` or `confidence` value.
 
 ## Related capabilities
 

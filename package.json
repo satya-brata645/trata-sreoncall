@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test lib/os/__tests__/*.test.ts lib/agent/__tests__/*.test.ts lib/voice/__tests__/*.test.ts lib/store/__tests__/*.test.ts"
+    "test": "node --import tsx --test lib/os/__tests__/*.test.ts lib/agent/__tests__/*.test.ts lib/agent/memory/__tests__/*.test.ts lib/voice/__tests__/*.test.ts lib/store/__tests__/*.test.ts lib/builds/__tests__/*.test.ts lib/artifacts/__tests__/*.test.ts lib/schedule/__tests__/*.test.ts packages/disco-core/src/__tests__/*.test.ts",
+    "seed:artifacts": "tsx scripts/seed-artifacts.ts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -22,6 +24,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-virtual": "^3.14.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
@@ -30,6 +33,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
+    "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",

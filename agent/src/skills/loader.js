@@ -11,6 +11,7 @@ const path = require("path");
 
 const BASE_DIR = path.join(__dirname, "base");
 const LEARNED_DIR = path.join(__dirname, "learned");
+const PROFESSIONAL_PRACTICES_DIR = path.join(__dirname, "professional-practices");
 
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
@@ -45,20 +46,30 @@ function readSkillFile(dir, filename) {
     evidence_refs: Array.isArray(meta.evidence_refs) ? meta.evidence_refs : [],
     confidence: meta.confidence !== undefined ? Number(meta.confidence) : null,
     times_applied: meta.times_applied !== undefined ? Number(meta.times_applied) : 0,
+    times_verified: meta.times_verified !== undefined ? Number(meta.times_verified) : 0,
+    kind: meta.kind || "skill",
+    last_reviewed_at: meta.last_reviewed_at || null,
     body,
     _dir: dir,
     _filename: filename,
   };
 }
 
+function collectMarkdownFiles(dir, files = []) {
+  if (!fs.existsSync(dir)) return files;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectMarkdownFiles(fullPath, files);
+    else if (entry.isFile() && entry.name.endsWith(".md")) files.push({ dir, filename: entry.name });
+  }
+  return files;
+}
+
 function listAllSkillFiles() {
-  const dirs = [BASE_DIR, LEARNED_DIR];
+  const dirs = [BASE_DIR, PROFESSIONAL_PRACTICES_DIR, LEARNED_DIR];
   const files = [];
   for (const dir of dirs) {
-    if (!fs.existsSync(dir)) continue;
-    for (const filename of fs.readdirSync(dir)) {
-      if (filename.endsWith(".md")) files.push({ dir, filename });
-    }
+    collectMarkdownFiles(dir, files);
   }
   return files;
 }
@@ -95,4 +106,5 @@ module.exports = {
   readSkillFile,
   BASE_DIR,
   LEARNED_DIR,
+  PROFESSIONAL_PRACTICES_DIR,
 };

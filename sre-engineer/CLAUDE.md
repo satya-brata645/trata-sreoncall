@@ -26,7 +26,9 @@ is a value, not a limitation.
 ## Shift sequence
 
 ```
-log-triage
+log-triage                                      (reads corrections → sweeps → EVALUATES against
+                                                  its own baselines, writing evaluation.md →
+                                                  alerts → revises baselines → writes experience)
   → alert-grouping                              (always, even if log-triage raised nothing)
     → for each OPEN incident (declared or escalated):
         on-call-paging                          (runs before rca on purpose — urgency is a
@@ -52,6 +54,8 @@ sequence is allowed to be silently skipped because there was "nothing to report.
 
 1. Create `$OUTPUT_DIR` = `outputs/<YYMMDD_hhmmss>/` with `alerts/`, `incidents/`, `logs/`,
    `postmortems/` subfolders. Export `OUTPUT_DIR` — every capability reads this.
+   `log-triage` additionally writes `$OUTPUT_DIR/evaluation.md` (its baseline comparison) —
+   that file is a required artifact of every shift, including a quiet one.
 2. Carry forward any still-open incident from the most recent prior run's `incidents/*.json`
    (`status` not `resolved`/`closed`) into this run's `incidents/`. An open incident stays
    open across shifts until a capability resolves or merges it on real evidence — never
@@ -72,8 +76,32 @@ sequence is allowed to be silently skipped because there was "nothing to report.
   demo` app — reading its source for RCA/remediation is the only interaction with it, always.
 - A capability's own upskilling may only write to its own `playbooks/`/`experiences/` — never
   another capability's folder.
-- `on-call-paging` never claims to have sent a real notification — there is no pager
-  integration in this environment. It produces a paging *decision*, always, never a live send.
+- Nothing may gate on a `times_applied` or `confidence` value — not skipping a baseline,
+  not distrusting a playbook, not retiring an experience. They are informational only. A rule
+  like "ignore baselines with confidence: low" is a threshold deciding behavior, which is
+  exactly what the gate above forbids, however reasonable it sounds.
+
+## Durable memory — what must survive a shift
+
+The point of a shift is not only to handle what happened, but to leave the next shift better
+equipped than this one started. Three kinds of artifact carry across, and none of them may be
+skipped because a shift felt uneventful:
+
+- **`capabilities/log-triage/.claude/skills/log-triage/baselines/<service>.md`** — what
+  `log-triage` has learned normal looks like, written from real observed windows. Read
+  `baselines/FORMAT.md` for the hard line: observations and judgment, never a firing rule.
+  A service with no baseline yet is expected early — write one from this window.
+- **`capabilities/*/.claude/skills/*/experiences/`** — one entry per capability per shift where
+  it did real work. No refuter gate: a record of what happened is a fact, not a claim. This is
+  the accumulating memory, and an empty `experiences/` folder after a working shift means the
+  shift did not finish properly.
+- **`corrections/<capability>/`** — the inbox where a human, or another capability, says this
+  one got something wrong. Every capability reads its own at the start of its turn and must
+  visibly apply or dispute each open one. See `corrections/README.md`.
+
+`playbooks/` keeps its strict bar (blind refuter must fail to refute) because a generalized
+heuristic steers every future run. `experiences/` deliberately does not, because the two are
+different kinds of claim.
 
 ## Environment
 

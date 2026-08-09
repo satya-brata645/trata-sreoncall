@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { MATTERS_WEIGHT, score, split } from "../salience";
+import { MATTERS_WEIGHT, score, scoreInContext, split } from "../salience";
 import { parseEvent, type SreEvent } from "../events";
 
 function event(overrides: Partial<SreEvent> = {}): SreEvent {
@@ -75,4 +75,38 @@ test("split keeps every event, on one side or the other", () => {
   const { mattering, rest } = split(events);
   assert.equal(mattering.length + rest.length, events.length);
   assert.equal(mattering.length, 2);
+});
+
+test("context salience calls out a novel event instead of treating it as an ordinary medium", () => {
+  const medium = event({ severity: "medium", evidence: [{ kind: "metric", ref: "m1" }] });
+  const contextual = scoreInContext(medium, { working: [], episodes: [], longTerm: [] });
+  assert.equal(contextual.matters, true);
+  assert.match(contextual.because, /never seen before/);
+});
+
+test("context salience habituates repeated signatures without fully silencing them", () => {
+  const repeated = event({ severity: "critical", evidence: [{ kind: "log", ref: "l1" }] });
+  const memory = {
+    working: [
+      {
+        id: "stm-old",
+        tier: "stm" as const,
+        kind: "incident" as const,
+        signature: "sre-engineer:detection:critical:something-happened",
+        strength: 0.9,
+        hits: 5,
+        lastHitAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        confirmations: 0,
+        contradictions: 0,
+        evidence: [],
+        sourceEventIds: ["old"],
+      },
+    ],
+    episodes: [],
+    longTerm: [],
+  };
+  const contextual = scoreInContext(repeated, memory);
+  assert.match(contextual.because, /repeated recently/);
+  assert.equal(contextual.matters, true);
 });

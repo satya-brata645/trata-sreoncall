@@ -35,15 +35,26 @@ function root(): string {
 const eventsPath = () => path.join(root(), "events.ndjson");
 const statePath = () => path.join(root(), "heartbeat-state.json");
 
+let cachedEvents: { file: string; mtimeMs: number; events: SreEvent[] } | null = null;
+
 export async function appendEvent(event: SreEvent): Promise<void> {
   await fs.mkdir(root(), { recursive: true });
   await fs.appendFile(eventsPath(), `${JSON.stringify(event)}\n`, "utf8");
+  cachedEvents = null;
 }
 
 export async function readEvents(): Promise<SreEvent[]> {
+  const file = eventsPath();
+  try {
+    const stat = await fs.stat(file);
+    if (cachedEvents?.file === file && cachedEvents.mtimeMs === stat.mtimeMs) return cachedEvents.events;
+  } catch {
+    return [];
+  }
+
   let raw: string;
   try {
-    raw = await fs.readFile(eventsPath(), "utf8");
+    raw = await fs.readFile(file, "utf8");
   } catch {
     return [];
   }
@@ -66,7 +77,12 @@ export async function readEvents(): Promise<SreEvent[]> {
       // A torn line costs one event, not the log.
     }
   }
-  return [...byId.values()].sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+  const events = [...byId.values()].sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+  // Polling tabs and heartbeat beats repeatedly read the same append-only log.
+  // Cache by mtime rather than time so a just-arrived event is never delayed.
+  const stat = await fs.stat(file).catch(() => null);
+  if (stat) cachedEvents = { file, mtimeMs: stat.mtimeMs, events };
+  return events;
 }
 
 export async function readHeartbeatState(): Promise<HeartbeatState> {
@@ -100,9 +116,9 @@ export async function writeHeartbeatState(state: HeartbeatState): Promise<void> 
  * The events this beat should consider.
  *
  * Bounded three ways — a lookback window, the cursor, and a per-beat cap — so a
- * backlog produces one sensible message rather than a burst. Oldest first,
- * because a briefing that reads in the order things happened is a briefing the
- * brain can reason about causally.
+ * backlog produces one sensible message rather than a burst. The cursor is an
+ * arrival cursor: producer clocks can be slow or backfill old causal times, so
+ * filtering on `at` would silently discard those events forever.
  */
 export async function eventsForBeat(
   state: HeartbeatState,
@@ -113,7 +129,8 @@ export async function eventsForBeat(
   const announced = new Set(state.announced);
 
   return events
-    .filter((event) => event.at > floor && event.at > state.lastSeen && !announced.has(event.id))
+    .filter((event) => event.receivedAt > floor && event.receivedAt > state.lastSeen && !announced.has(event.id))
+    .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt) || a.id.localeCompare(b.id))
     .slice(0, limit);
 }
 
