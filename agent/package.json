@@ -1,0 +1,15 @@
+{
+  "name": "sreoncall-agent",
+  "version": "0.1.0",
+  "description": "AI-native SREonCall prototype agent — detects, investigates, and proposes fixes for incidents in the shared OTel Demo app via LLM reasoning over live Mimir/Loki/Tempo data.",
+  "private": true,
+  "main": "bin/watch.js",
+  "scripts": {
+    "watch": "node bin/watch.js",
+    "show": "node bin/show.js",
+    "ask": "node bin/ask.js"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
