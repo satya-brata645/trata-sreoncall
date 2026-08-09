@@ -61,9 +61,21 @@ services (check list_related_services / trace spans) before deciding severity, a
 the ORIGIN service over the loudest symptom.
 
 When you're done gathering evidence, call exactly ONE of: open_incident, update_incident,
-resolve_incident, or no_incident. If you conclude the fix is a real code/config change and
-you're confident, also call propose_fix_pr in the same turn as your terminal call, citing the
-same evidence.
+resolve_incident, or no_incident.
+
+OWNERSHIP — this part is not optional. Whenever you open an incident (or revise one whose fix
+you now understand) with confidence >= 0.7 and a fixType of 'code' or 'config', you MUST also
+call propose_fix_pr in that same turn. Listing recommended actions is not ownership; a human
+still has to do all the work. The PR is where you hand over something concrete and reviewable.
+Write a real, specific artifact:
+  - fixType 'config' -> a runbook at runbooks/<service>-<symptom>.md giving the exact remediation
+    steps for THIS fault (the specific setting/flag/threshold, its current and intended value,
+    how to verify recovery with the same query you cited), plus what to check first next time.
+  - fixType 'code' -> the concrete change or a precise description of it at the right path,
+    explaining what breaks without it.
+Never write a generic runbook that would read the same for any incident — cite this incident's
+actual metric values, trace IDs, and error text. The PR is opened as a DRAFT for human review
+and is never merged automatically.
 
 CURRENTLY OPEN INCIDENTS:
 ${summarizeOpenIncidents(openIncidents)}
@@ -101,8 +113,55 @@ is genuinely distinct from every incident listed above.`;
   }
 
   // Now that the incident actually exists, open the draft PR the model queued during the loop.
-  const queued = result.toolCallLog.find((c) => c.name === "propose_fix_pr")?.result?.proposal;
-  if (queued && incidentId) {
+  let queued = result.toolCallLog.find((c) => c.name === "propose_fix_pr")?.result?.proposal;
+
+  // Asking for the terminal action and the fix proposal in one turn is unreliable — the model
+  // reliably does the first and drops the second. So once an incident is recorded with an
+  // actionable fix, ownership is enforced with a dedicated follow-up call that can only
+  // produce the fix artifact. The content is still entirely the model's.
+  const terminalName = result.terminal?.name;
+  const terminalArgs = result.terminal?.args || {};
+  // update_incident may omit fixType (it's optional there), so fall back to what the incident
+  // already recorded — otherwise revisions silently skip the ownership step.
+  const effectiveFixType = terminalArgs.fixType || (incidentId ? store.get(incidentId)?.fixType : undefined);
+  const wantsFix =
+    ["open_incident", "update_incident"].includes(terminalName) &&
+    ["code", "config"].includes(effectiveFixType) &&
+    (terminalArgs.confidence ?? 0) >= 0.7;
+
+  if (!queued && wantsFix) {
+    const proposeTool = INVESTIGATE_ACTION_TOOLS.filter((t) => t.function.name === "propose_fix_pr");
+    try {
+      const fixRun = await runToolLoop({
+        system: `You already established the root cause of an incident. Now produce the concrete fix artifact — a
+draft PR a human can review. It must be specific to THIS incident: cite its actual metric values,
+trace IDs, and error text. A runbook that would read identically for any other incident is not
+acceptable. For fixType 'config', write runbooks/<service>-<symptom>.md with the exact remediation
+(which setting/flag, current vs intended value, the literal query to verify recovery). For 'code',
+describe the precise change and what breaks without it.`,
+        userMessage: `Incident: ${terminalArgs.title || terminalArgs.revisionReason}
+Origin service: ${terminalArgs.service || service}
+Fix type: ${effectiveFixType}
+Root cause: ${terminalArgs.rootCause}
+Evidence: ${JSON.stringify(terminalArgs.evidence || [])}
+Recommended actions: ${JSON.stringify(terminalArgs.recommendedActions || [])}
+
+Call propose_fix_pr now.`,
+        tools: proposeTool,
+        dispatch,
+        terminalToolNames: ["propose_fix_pr"],
+        maxTurns: 1,
+      });
+      queued = fixRun.terminal?.result?.proposal;
+      result.toolCallLog.push(...fixRun.toolCallLog);
+    } catch (err) {
+      result.fixProposalError = err.message;
+    }
+  }
+  // One incident gets revised many times as new symptoms trace back to it; without this guard
+  // each revision would open another PR for the same underlying fix.
+  const alreadyHasPr = incidentId ? Boolean(store.get(incidentId)?.prUrl) : false;
+  if (queued && incidentId && !alreadyHasPr) {
     try {
       const url = await github.proposeFixPr({
         incidentId,
